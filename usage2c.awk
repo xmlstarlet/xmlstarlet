@@ -6,13 +6,13 @@ BEGIN {
 }
 
 # text in src/foo-bar.txt results in
-#   static const char foo_text[] = {
+#   static const char foo_bar[] = {
 #     't', 'h', 'e', ' ', 't', 'e', 'x', 't', ...
 #   }
 length(command_name) == 0 {
     command_name = FILENAME;
     sub(/\.txt$/, "", command_name);
-    sub(/^([^\/]+\/)*/, "", command_name);
+    sub(/^.*\//, "", command_name);
     gsub(/-/, "_", command_name);
     printf("static const char %s[] = {\n", command_name);
     progs = 0;
