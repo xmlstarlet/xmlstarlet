@@ -56,6 +56,7 @@ xmlDocPtr xmlstarHtmlReadFile(const char *filename, const char *encoding, int op
 typedef struct _gOptions {
     int quiet;            /* no error output */
     int doc_namespace;   /* extract namespace bindings from input doc */
+    int ignore_default_namespace;
 } gOptions;
 
 typedef gOptions *gOptionsPtr;
@@ -71,5 +72,7 @@ extern const xmlChar *default_ns;
 int parseNSArr(xmlChar** ns_arr, int* plen, int argc, char **argv);
 void cleanupNSArr(xmlChar **ns_arr);
 extern xmlChar *ns_arr[];
+
+void remove_namespace_tree_walk(xmlNodePtr node, xmlNsPtr ns);
 
 #endif  /* XMLSTAR_H */

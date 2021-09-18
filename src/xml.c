@@ -351,6 +351,11 @@ gParseOptions(gOptionsPtr ops, int *argc, char **argv)
             ops->doc_namespace = 1;
             i++;
         }
+        else if (!strcmp(argv[i], "--ignore-default-namespace"))
+        {
+            ops->ignore_default_namespace = 1;
+            i++;
+        }
         else if (!strcmp(argv[i], "--version"))
         {
             fprintf(stdout, "%s\n"
