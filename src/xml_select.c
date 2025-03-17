@@ -882,7 +882,7 @@ caseSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
 	}
 
         tempcaseorder[j] = 0;
-	if ((comp->case_order == NULL) /* && (comp->has_case_order != 0) */) {
+	if (comp->case_order == NULL) {
 	    comp->case_order = xsltEvalAttrValueTemplate(ctxt, sorts[j],
                 (const xmlChar *) "case-order", XSLT_NAMESPACE);
 	    if (comp->case_order != NULL) {
