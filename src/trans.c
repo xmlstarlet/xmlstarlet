@@ -41,13 +41,6 @@ void
 xsltInitLibXml(xsltOptionsPtr ops)
 {
     /*
-     * Initialize library memory
-     */
-    xmlInitMemory();
-
-    LIBXML_TEST_VERSION
-
-    /*
      * Store line numbers in the document tree
      */
     xmlLineNumbersDefault(1);
@@ -56,11 +49,6 @@ xsltInitLibXml(xsltOptionsPtr ops)
      * Register the EXSLT extensions
      */
     exsltRegisterAll();
-
-    /*
-     * Register the test module
-    */
-    xsltRegisterTestModule();
 
     if (ops->show_extensions)
     {

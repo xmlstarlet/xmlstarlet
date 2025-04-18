@@ -109,13 +109,6 @@ void
 foInitLibXml(foOptionsPtr ops)
 {
     /*
-     * Initialize library memory
-     */
-    xmlInitMemory();
-
-    LIBXML_TEST_VERSION
-
-    /*
      * Store line numbers in the document tree
      */
     xmlLineNumbersDefault(1);

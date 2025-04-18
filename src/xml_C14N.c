@@ -118,12 +118,6 @@ int c14nMain(int argc, char **argv) {
     int ret = -1, nonet = 1;
     
     /*
-     * Init libxml
-     */     
-    xmlInitParser();
-    LIBXML_TEST_VERSION
-    
-    /*
      * Parse command line and process file
      */
 
