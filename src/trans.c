@@ -193,8 +193,6 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
                 errorno = 5;
                 goto done;
             }
-            if (cur->indent == 1) xmlIndentTreeOutput = 1;
-            else xmlIndentTreeOutput = 0;
         }
         else
         {
