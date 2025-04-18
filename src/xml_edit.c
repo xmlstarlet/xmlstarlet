@@ -559,7 +559,6 @@ edOutput(const char* filename, const XmlEdAction* ops, int ops_count,
     {
         cleanupNSArr(ns_arr);
         xmlCleanupParser();
-        xmlCleanupGlobals();
         exit(EXIT_BAD_FILE);
     }
 
@@ -752,7 +751,5 @@ edMain(int argc, char **argv)
 
     xmlFree(ops);
     cleanupNSArr(ns_arr);
-    xmlCleanupParser();
-    xmlCleanupGlobals();
     return 0;
 }

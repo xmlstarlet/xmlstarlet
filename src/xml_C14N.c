@@ -164,12 +164,6 @@ int c14nMain(int argc, char **argv) {
         c14nUsage(argv[0], EXIT_BAD_ARGS);
     }
 
-    /* 
-     * Shutdown libxml
-     */
-    xmlCleanupParser();
-    xmlMemoryDump();
-    
     return ret;
 }
 

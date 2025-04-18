@@ -125,19 +125,6 @@ trParseOptions(xsltOptionsPtr ops, int argc, char **argv)
 }
 
 /**
- *  Cleanup memory
- */
-void
-trCleanup()
-{
-    xsltCleanupGlobals();
-    xmlCleanupParser();
-#if 0
-    xmlMemoryDump();
-#endif
-}
-
-/**
  *  Parse command line for XSLT parameters
  */
 int
@@ -276,7 +263,6 @@ trMain(int argc, char **argv)
 
     /* free resources */
     trCleanupParams(xsltParams);
-    trCleanup();
     
     return errorno;                                                
 }

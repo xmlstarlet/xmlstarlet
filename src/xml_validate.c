@@ -490,11 +490,8 @@ valMain(int argc, char **argv)
         xmlSchemaFreeValidCtxt(schemaCtxt);
         xmlRelaxNGFree(relaxng);
         xmlSchemaFree(schema);
-        xmlRelaxNGCleanupTypes();
-        xmlSchemaCleanupTypes();
 #endif  /* LIBXML_SCHEMAS_ENABLED */
     }
 
-    xmlCleanupParser();
     return invalidFound;
 }

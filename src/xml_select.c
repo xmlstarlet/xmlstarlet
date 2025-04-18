@@ -740,12 +740,6 @@ selMain(int argc, char **argv)
     if (i == argc)
         do_file("-", style_tree, xml_options, &ops, &xsltOps, &status);
 
-    /* 
-     * Shutdown libxml
-     */
-    xsltCleanupGlobals();
-    xmlCleanupParser();
-    
     return status;
 }
 

@@ -313,6 +313,5 @@ pyxMain(int argc,const char *argv[])
             if (ret != 0) status = ret;
         }
     }
-    xmlCleanupParser();
     return status;
 }
