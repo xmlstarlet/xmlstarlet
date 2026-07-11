@@ -1,0 +1,7 @@
+#!/bin/sh
+# xml fo --html must read the HTML document from stdin when the filename is "-".
+# Assert the piped content is parsed and emitted (independent of how each
+# libxml2 version formats the HTML around it).
+printf '<html><body><p>xmlstarlet-html-stdin</p></body></html>' \
+    | ./xmlstarlet fo --html - \
+    | grep -o 'xmlstarlet-html-stdin'

@@ -246,7 +246,7 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
         {
             doc = NULL;
 #ifdef LIBXML_HTML_ENABLED
-            if (ops->html) doc = htmlReadFile(docs[i], NULL, options);
+            if (ops->html) doc = xmlstarHtmlReadFile(docs[i], NULL, options);
             else
 #endif
             {
@@ -267,7 +267,7 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
             /* stdin */
             doc = NULL;
 #ifdef LIBXML_HTML_ENABLED
-            if (ops->html) doc = htmlParseFile("-", NULL);
+            if (ops->html) doc = xmlstarHtmlReadFile("-", NULL, options);
             else
 #endif
                 doc = xmlstarReadFile("-", NULL, options);

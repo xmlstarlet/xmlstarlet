@@ -51,6 +51,7 @@ examples/exslt-ed\
 examples/exslt1\
 examples/external-entity\
 examples/findfile1\
+examples/fo-html-stdin\
 examples/genxml1\
 examples/hello1\
 examples/localname1\

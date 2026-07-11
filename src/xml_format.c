@@ -286,7 +286,7 @@ foProcess(foOptionsPtr ops, int start, int argc, char **argv)
 #ifdef LIBXML_HTML_ENABLED
     if (ops->html)
     {
-        doc = htmlReadFile(fileName, NULL, ops->options);
+        doc = xmlstarHtmlReadFile(fileName, NULL, ops->options);
     }
     else
 #endif

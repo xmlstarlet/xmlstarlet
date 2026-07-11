@@ -45,6 +45,7 @@ THE SOFTWARE.
 
 #include <libxml/parserInternals.h>     /* inputPush() */
 #include <libxml/xmlIO.h>               /* xmlParserInputBufferCreateFd() */
+#include <libxml/HTMLparser.h>          /* htmlReadFd() */
 
 #include "xmlstar.h"
 
@@ -115,6 +116,27 @@ xmlstarCreateFileParserCtxt(const char *filename)
     inputPush(ctxt, input);
     return ctxt;
 }
+
+#ifdef LIBXML_HTML_ENABLED
+/**
+ *  Like htmlReadFile(), but "-" reads from standard input.
+ */
+xmlDocPtr
+xmlstarHtmlReadFile(const char *filename, const char *encoding, int options)
+{
+    if (isStdinName(filename))
+        /* libxml2 2.13 dropped its "-" => stdin handling (see xmlstarReadFile),
+         * and only then does htmlReadFd() read stdin correctly; on older
+         * releases htmlReadFd() is broken but libxml2 still maps "-" to stdin
+         * itself, so use htmlReadFile("-") there. */
+#if LIBXML_VERSION >= 21300
+        return htmlReadFd(STDIN_FILENO, "-", encoding, options);
+#else
+        return htmlReadFile("-", encoding, options);
+#endif
+    return htmlReadFile(filename, encoding, options);
+}
+#endif
 
 static const xmlChar* XMLSTAR_NS = BAD_CAST "http://xmlstar.sourceforge.net";
 static const xmlChar* XMLSTAR_NS_PREFIX = BAD_CAST "xstar";
