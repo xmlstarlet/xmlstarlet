@@ -290,7 +290,7 @@ foProcess(foOptionsPtr ops, int start, int argc, char **argv)
     }
     else
 #endif
-        doc = xmlReadFile(fileName, NULL, ops->options);
+        doc = xmlstarReadFile(fileName, NULL, ops->options);
 
     if (doc == NULL)
     {

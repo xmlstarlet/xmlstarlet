@@ -258,7 +258,7 @@ pyx_process_file(const char *filename)
     int ret;
     xmlParserCtxtPtr ctxt;
 
-    ctxt = xmlCreateFileParserCtxt(filename);
+    ctxt = xmlstarCreateFileParserCtxt(filename);
     if (!ctxt) /* assume it failed because of filename */
         return EXIT_BAD_FILE;
 

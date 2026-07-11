@@ -660,7 +660,7 @@ do_file(const char *filename, xmlDocPtr style_tree,
     params[1] = (char *) value;
 
 
-    doc = xmlReadFile(filename, NULL, xml_options);
+    doc = xmlstarReadFile(filename, NULL, xml_options);
     if (doc != NULL) {
         xmlDocPtr res;
 
@@ -725,7 +725,7 @@ selMain(int argc, char **argv)
     if (ops.printXSLT)
     {
         if (i < argc) {
-            xmlTextReaderPtr reader = xmlReaderForFile(argv[i], NULL, xml_options);
+            xmlTextReaderPtr reader = xmlstarReaderForFile(argv[i], NULL, xml_options);
             xmlTextReaderRead(reader);
             extract_ns_defs(xmlTextReaderCurrentNode(reader), style_tree);
             xmlTextReaderClose(reader);

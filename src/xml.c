@@ -43,9 +43,78 @@ THE SOFTWARE.
 #  include <shellapi.h>         /* CommandLineToArgvW() */
 #endif
 
+#include <libxml/parserInternals.h>     /* inputPush() */
+#include <libxml/xmlIO.h>               /* xmlParserInputBufferCreateFd() */
+
 #include "xmlstar.h"
 
+#ifndef STDIN_FILENO
+#  define STDIN_FILENO 0
+#endif
+
 gOptions globalOptions;
+
+/**
+ *  Return non-zero if @filename is the conventional "-" meaning stdin.
+ */
+int
+isStdinName(const char *filename)
+{
+    return filename != NULL && filename[0] == '-' && filename[1] == '\0';
+}
+
+/**
+ *  Like xmlReadFile(), but "-" reads from standard input.
+ */
+xmlDocPtr
+xmlstarReadFile(const char *filename, const char *encoding, int options)
+{
+    if (isStdinName(filename))
+        return xmlReadFd(STDIN_FILENO, "-", encoding, options);
+    return xmlReadFile(filename, encoding, options);
+}
+
+/**
+ *  Like xmlReaderForFile(), but "-" reads from standard input.
+ */
+xmlTextReaderPtr
+xmlstarReaderForFile(const char *filename, const char *encoding, int options)
+{
+    if (isStdinName(filename))
+        return xmlReaderForFd(STDIN_FILENO, "-", encoding, options);
+    return xmlReaderForFile(filename, encoding, options);
+}
+
+/**
+ *  Like xmlCreateFileParserCtxt(), but "-" reads from standard input.
+ */
+xmlParserCtxtPtr
+xmlstarCreateFileParserCtxt(const char *filename)
+{
+    xmlParserCtxtPtr ctxt;
+    xmlParserInputBufferPtr buf;
+    xmlParserInputPtr input;
+
+    if (!isStdinName(filename))
+        return xmlCreateFileParserCtxt(filename);
+
+    buf = xmlParserInputBufferCreateFd(STDIN_FILENO, XML_CHAR_ENCODING_NONE);
+    if (buf == NULL)
+        return NULL;
+    ctxt = xmlNewParserCtxt();
+    if (ctxt == NULL) {
+        xmlFreeParserInputBuffer(buf);
+        return NULL;
+    }
+    input = xmlNewIOInputStream(ctxt, buf, XML_CHAR_ENCODING_NONE);
+    if (input == NULL) {
+        xmlFreeParserInputBuffer(buf);
+        xmlFreeParserCtxt(ctxt);
+        return NULL;
+    }
+    inputPush(ctxt, input);
+    return ctxt;
+}
 
 static const xmlChar* XMLSTAR_NS = BAD_CAST "http://xmlstar.sourceforge.net";
 static const xmlChar* XMLSTAR_NS_PREFIX = BAD_CAST "xstar";

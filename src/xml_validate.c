@@ -319,7 +319,7 @@ valMain(int argc, char **argv)
             doc = NULL;
 
             errorInfo.filename = argv[i];
-            doc = xmlReadFile(argv[i], NULL, options);
+            doc = xmlstarReadFile(argv[i], NULL, options);
             if (doc)
             {
                 /* TODO: precompile DTD once */                
@@ -412,7 +412,7 @@ valMain(int argc, char **argv)
 
             if (!reader)
             {
-                reader = xmlReaderForFile(argv[i], NULL, options);
+                reader = xmlstarReaderForFile(argv[i], NULL, options);
             }
             else
             {

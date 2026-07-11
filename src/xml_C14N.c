@@ -61,7 +61,7 @@ run_c14n(const char* xml_filename, int with_comments, int exclusive,
      * attributes and resolve all character and entities references
      */
 
-    doc = xmlReadFile(xml_filename, NULL,
+    doc = xmlstarReadFile(xml_filename, NULL,
         XML_PARSE_NOENT | XML_PARSE_DTDLOAD |
         XML_PARSE_DTDATTR | (nonet? XML_PARSE_NONET:0));
     if (doc == NULL) {
@@ -240,7 +240,7 @@ load_xpath_expr (xmlDocPtr parent_doc, const char* filename) {
     xmlLoadExtDtdDefaultValue = XML_DETECT_IDS | XML_COMPLETE_ATTRS;
     xmlSubstituteEntitiesDefault(1);
 
-    doc = xmlReadFile(filename, NULL, XML_PARSE_DTDLOAD | XML_PARSE_DTDATTR);
+    doc = xmlstarReadFile(filename, NULL, XML_PARSE_DTDLOAD | XML_PARSE_DTDATTR);
     if (doc == NULL) {
         fprintf(stderr, "Error: unable to parse file \"%s\"\n", filename);
         return(NULL);

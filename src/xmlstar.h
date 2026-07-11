@@ -12,6 +12,7 @@
 # define set_stdout_binary()
 #endif
 
+#include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 #include <libxml/xmlreader.h>
@@ -34,6 +35,16 @@ typedef struct _errorInfo {
 
 void reportError(void *ptr, xmlErrorPtr error);
 void suppressErrors(void);
+
+/* Input helpers that treat the filename "-" as standard input.  libxml2 2.13
+ * removed its built-in "-" => stdin handling for reads, so restore it here for
+ * every xmlstarlet input path.  For any other filename these forward to the
+ * plain libxml2 call unchanged. */
+int isStdinName(const char *filename);
+xmlDocPtr xmlstarReadFile(const char *filename, const char *encoding, int options);
+xmlTextReaderPtr xmlstarReaderForFile(const char *filename, const char *encoding,
+                                      int options);
+xmlParserCtxtPtr xmlstarCreateFileParserCtxt(const char *filename);
 
 typedef struct _gOptions {
     int quiet;            /* no error output */

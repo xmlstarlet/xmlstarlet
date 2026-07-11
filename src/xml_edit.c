@@ -553,7 +553,7 @@ edOutput(const char* filename, const XmlEdAction* ops, int ops_count,
         (g_ops->nonet? XML_PARSE_NONET : 0);
     xmlSaveCtxtPtr save;
 
-    doc = xmlReadFile(filename, NULL, read_options);
+    doc = xmlstarReadFile(filename, NULL, read_options);
     if (!doc)
     {
         cleanupNSArr(ns_arr);

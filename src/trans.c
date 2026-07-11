@@ -178,7 +178,7 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
     /*
      * Compile XSLT Sylesheet
      */
-    style = xmlReadFile((const char *) xsl, NULL, options);
+    style = xmlstarReadFile((const char *) xsl, NULL, options);
     if (style == NULL)
     {
         fprintf(stderr,  "cannot parse %s\n", xsl);
@@ -199,7 +199,7 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
             }            
             for (i=0; i<count; i++) 
             {
-                style = xmlReadFile((const char *) docs[i], NULL, options);
+                style = xmlstarReadFile((const char *) docs[i], NULL, options);
                 if (style == NULL)
                 {
                     fprintf(stderr, "cannot parse %s\n", docs[i]);
@@ -250,7 +250,7 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
             else
 #endif
             {
-                doc = xmlReadFile((const char *) docs[i], NULL, options);
+                doc = xmlstarReadFile((const char *) docs[i], NULL, options);
             }
 
             if (doc == NULL)
@@ -270,7 +270,7 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
             if (ops->html) doc = htmlParseFile("-", NULL);
             else
 #endif
-                doc = xmlReadFile("-", NULL, options);
+                doc = xmlstarReadFile("-", NULL, options);
             xsltProcess(ops, doc, params, cur, "-");
         }
     }

@@ -82,7 +82,7 @@ parse_xml_file(const char *filename)
     int ret, prev_depth = 0;
     xmlTextReaderPtr reader;
 
-    for (reader = xmlReaderForFile(filename, NULL, 0);;)
+    for (reader = xmlstarReaderForFile(filename, NULL, 0);;)
     {
         int depth;
         const xmlChar *name;
