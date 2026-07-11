@@ -1,0 +1,7 @@
+# ubuntu-26.04 / -arm are real GitHub-hosted runner images (currently preview);
+# actionlint's bundled label list predates them, so declare them here to avoid
+# a false "unknown runner label" error. Remove once actionlint knows them.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
+    - ubuntu-26.04-arm

@@ -1,0 +1,559 @@
+# XMLStarlet CI
+#
+# Goal: document the *actual* build/test envelope of the current source
+# across the combinations of libxml2, libxslt, compiler and OS that matter.
+#
+# The libxml2/libxslt job builds each dependency version from source and runs
+# `make check` against it. Versions the current source already supports are
+# required (must stay green). Versions the source does not (yet) fully work
+# against are marked `experimental` (continue-on-error) - those reds are the
+# to-improve list, and get promoted to required as fixes land. This spans both
+# ends: newer libxml2 ahead of the source, and the oldest libxml2 behind it.
+#
+# xmlstarlet's configure.ac declares the minimum as libxml2 >= 2.6.27 (libxslt
+# >= 1.1.9), and configure hard-rejects anything older (verified: 2.6.26 ->
+# "xmlstarlet needs at least libxml version 2.6.27"). The matrix confirms 2.6.27
+# (declared minimum) and 2.6.30 (last 2.6) build and pass the core suite, but
+# schema/RelaxNG validation, --html and -R recover crash on that vintage - so
+# full functionality needs a newer libxml2.
+
+name: CI
+
+on:
+  push:
+    branches: [master, ci]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to test (branch/tag/sha), e.g. 1.6.1 or master"
+        required: false
+        default: master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Flagship axis: build against many libxml2 / libxslt versions from source.
+  # ---------------------------------------------------------------------------
+  libxml2:
+    name: libxml2 ${{ matrix.libxml2 }}
+    runs-on: ubuntu-24.04
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # xmlstarlet's configure.ac declares libxml2 >= 2.6.27. The declared
+          # minimum and the last 2.6 release both build and pass the core suite
+          # (including the stdin "-" tests). 2.6.x-vintage schema/RelaxNG
+          # validation, --html and -R recover crash - those five tests are
+          # marked XFAIL (see the Test step), so the jobs report green with a
+          # note rather than a red. oldxml also drives the old-libxml2 build
+          # workarounds in "Build libxml2 + libxslt". Required: a regression that
+          # makes one of the five pass (XPASS) or newly fail then blocks.
+          - { libxml2: "2.6.27",  libxslt: "1.1.26", experimental: false, oldxml: true }
+          - { libxml2: "2.6.30",  libxslt: "1.1.26", experimental: false, oldxml: true }
+          - { libxml2: "2.7.8",   libxslt: "1.1.26", experimental: false }
+          - { libxml2: "2.8.0",   libxslt: "1.1.28", experimental: false }
+          - { libxml2: "2.9.14",  libxslt: "1.1.35", experimental: false }
+          - { libxml2: "2.10.4",  libxslt: "1.1.37", experimental: false }
+          - { libxml2: "2.11.9",  libxslt: "1.1.39", experimental: false }
+          - { libxml2: "2.12.10", libxslt: "1.1.42", experimental: false }
+          # bigxml error-line tests regressed at 2.13.0 (2.12.10 passes). 2.13.0
+          # also had 14 transient failures libxml2 fixed in 2.13.1; keep 2.13.0
+          # (regression point), 2.13.1, and 2.13.8 (latest 2.13) as markers.
+          - { libxml2: "2.13.0",  libxslt: "1.1.42", experimental: true }
+          - { libxml2: "2.13.1",  libxslt: "1.1.42", experimental: true }
+          - { libxml2: "2.13.8",  libxslt: "1.1.42", experimental: true }
+          - { libxml2: "2.14.5",  libxslt: "1.1.43", experimental: true }
+          - { libxml2: "2.15.3",  libxslt: "1.1.43", experimental: true }
+          - { libxml2: "git",     libxslt: "git",    experimental: true }
+    env:
+      PREFIX: ${{ github.workspace }}/deps
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0   # need tags for git describe -> version.h
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential autoconf automake libtool pkg-config \
+            wget xz-utils ca-certificates git
+
+      - name: Cache libxml2 + libxslt (${{ matrix.libxml2 }}/${{ matrix.libxslt }})
+        if: matrix.libxml2 != 'git'
+        id: deps-cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.PREFIX }}
+          key: deps-libxml2-${{ matrix.libxml2 }}-libxslt-${{ matrix.libxslt }}
+
+      - name: Build libxml2 + libxslt
+        if: matrix.libxml2 == 'git' || steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          set -eux
+          mkdir -p "$PREFIX/src"
+          cd "$PREFIX/src"
+
+          if [ "${{ matrix.libxml2 }}" = "git" ]; then
+            git clone --depth 1 https://gitlab.gnome.org/GNOME/libxml2.git
+            ( cd libxml2 && ./autogen.sh --prefix="$PREFIX" --without-python \
+                && make -j"$(nproc)" && make install )
+            git clone --depth 1 https://gitlab.gnome.org/GNOME/libxslt.git
+            ( cd libxslt && ./autogen.sh --prefix="$PREFIX" \
+                --with-libxml-prefix="$PREFIX" --without-python \
+                && make -j"$(nproc)" && make install )
+          else
+            xml2="${{ matrix.libxml2 }}"; xml2_series="${xml2%.*}"
+            if [ "${{ matrix.oldxml }}" = "true" ]; then
+              # pre-2.7 releases ship .tar.gz only; their nanohttp/nanoftp call
+              # open(O_CREAT) with 2 args, which modern glibc fortify rejects, so
+              # drop the network modules (xmlstarlet uses neither); and force
+              # pre-C23 prototype semantics for the weak pthread stubs in
+              # threads.c that otherwise conflict with the real prototypes.
+              wget -q "https://download.gnome.org/sources/libxml2/${xml2_series}/libxml2-${xml2}.tar.gz"
+              tar xf "libxml2-${xml2}.tar.gz"
+              ( cd "libxml2-${xml2}" && ./configure --prefix="$PREFIX" --without-python \
+                  --without-http --without-ftp CFLAGS="-O2 -std=gnu17" \
+                  && make -j"$(nproc)" && make install )
+            else
+              wget -q "https://download.gnome.org/sources/libxml2/${xml2_series}/libxml2-${xml2}.tar.xz"
+              tar xf "libxml2-${xml2}.tar.xz"
+              ( cd "libxml2-${xml2}" && ./configure --prefix="$PREFIX" --without-python \
+                  && make -j"$(nproc)" && make install )
+            fi
+
+            xslt="${{ matrix.libxslt }}"; xslt_series="${xslt%.*}"
+            wget -q "https://download.gnome.org/sources/libxslt/${xslt_series}/libxslt-${xslt}.tar.xz"
+            tar xf "libxslt-${xslt}.tar.xz"
+            ( cd "libxslt-${xslt}" && ./configure --prefix="$PREFIX" \
+                --with-libxml-prefix="$PREFIX" --without-python \
+                && make -j"$(nproc)" && make install )
+          fi
+
+      - name: Configure xmlstarlet
+        run: |
+          set -eux
+          autoreconf -fi
+          ./configure \
+            --disable-build-docs \
+            LIBXML_CONFIG="$PREFIX/bin/xml2-config" \
+            LIBXSLT_CONFIG="$PREFIX/bin/xslt-config" \
+            LDFLAGS="-Wl,-rpath,$PREFIX/lib"
+
+      # man_MANS / dist_doc_DATA are listed unconditionally in Makefile.am but
+      # their rules are gated on BUILD_DOCS; empty them so `all` builds only
+      # the binary (docs generation needs docbook-xsl and is tested separately).
+      - name: Build
+        run: make -j"$(nproc)" man_MANS= dist_doc_DATA=
+
+      - name: Test
+        run: |
+          if [ "${{ matrix.oldxml }}" = "true" ]; then
+            # libxml2 2.6.x crashes in schema/RelaxNG validation, --html and -R
+            # recover - pre-existing limitations of that vintage, not xmlstarlet
+            # regressions. Mark exactly those expected-fail on top of the suite's
+            # own XFAIL_TESTS so the run is green; if one starts passing again it
+            # surfaces as XPASS (which fails the job).
+            base=$(make -pn 2>/dev/null | sed -n 's/^XFAIL_TESTS = //p' | head -1)
+            make check man_MANS= dist_doc_DATA= XFAIL_TESTS="$base \
+              examples/bigxml-xsd examples/hello1 examples/recover1 \
+              examples/schema1 examples/valid1"
+          else
+            make check man_MANS= dist_doc_DATA=
+          fi
+
+      - name: Report test results
+        if: always()
+        shell: bash
+        env:
+          LABEL: libxml2 ${{ matrix.libxml2 }} / libxslt ${{ matrix.libxslt }}
+          OLDXML: ${{ matrix.oldxml }}
+        run: |
+          log=test-suite.log
+          if [ ! -f "$log" ]; then
+            echo "- :warning: **${LABEL}** — build failed, no tests run" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          n() { sed -n "s/^# $1:[[:space:]]*//p" "$log" | head -1; }
+          T=$(n TOTAL); P=$(n PASS); S=$(n SKIP); XF=$(n XFAIL); F=$(n FAIL); XP=$(n XPASS); E=$(n ERROR)
+          NOTE=""
+          if [ "${F:-0}" != 0 ] || [ "${E:-0}" != 0 ] || [ "${XP:-0}" != 0 ]; then
+            I=":x:"
+          elif [ "${OLDXML}" = "true" ]; then
+            I=":grey_exclamation:"
+            NOTE=" — expected: 5 XFAIL are pre-existing libxml2 2.6.x crashes (schema/RelaxNG/--html/-R), not regressions"
+          else
+            I=":white_check_mark:"
+          fi
+          echo "- ${I} **${LABEL}** — total ${T:-?}, pass ${P:-0}, fail ${F:-0}, xfail ${XF:-0}, xpass ${XP:-0}, skip ${S:-0}, error ${E:-0}${NOTE}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${I}" = ":x:" ]; then
+            grep -E "^(FAIL|ERROR|XPASS):" "$log" | sed "s/^/  - /" >> "$GITHUB_STEP_SUMMARY" || true
+          fi
+
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: testlogs-libxml2-${{ matrix.libxml2 }}
+          path: |
+            test-suite.log
+            examples/*.log
+            examples/*.trs
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # Compiler axis: pin the distro libxml2/libxslt, vary the compiler.
+  # ---------------------------------------------------------------------------
+  # Compiler axis: vary the compiler against a fixed, from-source libxml2 so
+  # this genuinely isolates the compiler. The runner's system libxml2 would
+  # not - it is 2.9 on 22.04/24.04 but 2.15 on 26.04, which pristine 1.6.1
+  # cannot yet build against, so it would confound the compiler result.
+  compilers:
+    name: ${{ matrix.cc }}
+    runs-on: ${{ matrix.os }}
+    # clang errors by default on -Wincompatible-function-pointer-types, which
+    # the current source trips (xmlHashScanner const mismatch); gcc only warns.
+    # Tolerated until the source is fixed, like the newer-libxml2 jobs.
+    continue-on-error: ${{ matrix.experimental }}
+    env:
+      PREFIX: ${{ github.workspace }}/deps
+      LIBXML2: "2.12.10"   # newest libxml2 the current source builds against
+      LIBXSLT: "1.1.42"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # gcc 9-11 on 22.04, 12-14 on 24.04, 15-16 on 26.04 (gcc-16 from
+          # 26.04 universe - native, no PPA). All gcc pass on the pristine
+          # baseline, so all are required. NB 26.04 is still a preview image, so
+          # gcc-15/16 can flake on runner availability. clang stays experimental
+          # (it errors on the xmlHashScanner const mismatch that gcc only warns).
+          - { os: ubuntu-22.04, cc: gcc-9,  experimental: false }
+          - { os: ubuntu-22.04, cc: gcc-10, experimental: false }
+          - { os: ubuntu-22.04, cc: gcc-11, experimental: false }
+          - { os: ubuntu-24.04, cc: gcc-12, experimental: false }
+          - { os: ubuntu-24.04, cc: gcc-13, experimental: false }
+          - { os: ubuntu-24.04, cc: gcc-14, experimental: false }
+          - { os: ubuntu-26.04, cc: gcc-15, experimental: false }
+          - { os: ubuntu-26.04, cc: gcc-16, experimental: false }
+          - { os: ubuntu-24.04, cc: clang,  experimental: true }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0   # need tags for git describe -> version.h
+      - name: Install build tools + compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential autoconf automake libtool pkg-config \
+            wget xz-utils ca-certificates ${{ matrix.cc }}
+      - name: Cache libxml2 + libxslt (${{ env.LIBXML2 }}/${{ env.LIBXSLT }})
+        id: deps-cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.PREFIX }}
+          key: deps-${{ matrix.os }}-libxml2-${{ env.LIBXML2 }}-libxslt-${{ env.LIBXSLT }}
+      - name: Build pinned libxml2 + libxslt
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          set -eux
+          mkdir -p "$PREFIX/src"
+          cd "$PREFIX/src"
+          wget -q "https://download.gnome.org/sources/libxml2/${LIBXML2%.*}/libxml2-${LIBXML2}.tar.xz"
+          tar xf "libxml2-${LIBXML2}.tar.xz"
+          ( cd "libxml2-${LIBXML2}" && ./configure --prefix="$PREFIX" --without-python \
+              && make -j"$(nproc)" && make install )
+          wget -q "https://download.gnome.org/sources/libxslt/${LIBXSLT%.*}/libxslt-${LIBXSLT}.tar.xz"
+          tar xf "libxslt-${LIBXSLT}.tar.xz"
+          ( cd "libxslt-${LIBXSLT}" && ./configure --prefix="$PREFIX" \
+              --with-libxml-prefix="$PREFIX" --without-python \
+              && make -j"$(nproc)" && make install )
+      - name: Build + test
+        env:
+          CC: ${{ matrix.cc }}
+        run: |
+          set -eux
+          autoreconf -fi
+          ./configure --disable-build-docs \
+            LIBXML_CONFIG="$PREFIX/bin/xml2-config" \
+            LIBXSLT_CONFIG="$PREFIX/bin/xslt-config" \
+            LDFLAGS="-Wl,-rpath,$PREFIX/lib"
+          make -j"$(nproc)" man_MANS= dist_doc_DATA=
+          make check man_MANS= dist_doc_DATA=
+
+      - name: Report test results
+        if: always()
+        shell: bash
+        env:
+          LABEL: ${{ matrix.cc }}
+        run: |
+          log=test-suite.log
+          if [ ! -f "$log" ]; then
+            echo "- :warning: **${LABEL}** — build failed, no tests run" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          n() { sed -n "s/^# $1:[[:space:]]*//p" "$log" | head -1; }
+          T=$(n TOTAL); P=$(n PASS); S=$(n SKIP); XF=$(n XFAIL); F=$(n FAIL); XP=$(n XPASS); E=$(n ERROR)
+          if [ "${F:-0}" = 0 ] && [ "${E:-0}" = 0 ] && [ "${XP:-0}" = 0 ]; then I=":white_check_mark:"; else I=":x:"; fi
+          echo "- ${I} **${LABEL}** — total ${T:-?}, pass ${P:-0}, fail ${F:-0}, xfail ${XF:-0}, xpass ${XP:-0}, skip ${S:-0}, error ${E:-0}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${I}" = ":x:" ]; then
+            grep -E "^(FAIL|ERROR|XPASS):" "$log" | sed "s/^/  - /" >> "$GITHUB_STEP_SUMMARY" || true
+          fi
+
+  # ---------------------------------------------------------------------------
+  # OS axis: build against each platform's own libxml2/libxslt.
+  # Non-Linux runners ship recent libxml2, so those are experimental until the
+  # source builds cleanly against current libxml2.
+  # ---------------------------------------------------------------------------
+  os:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04,     experimental: false }
+          - { os: ubuntu-24.04-arm, experimental: false }  # aarch64
+          - { os: macos-latest,     experimental: true }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0   # need tags for git describe -> version.h
+      - name: Install deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential autoconf automake libtool pkg-config \
+            libxml2-dev libxslt1-dev
+      - name: Install deps (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # Drop the runner's preinstalled, untrusted aws/tap so brew does not
+          # emit a tap-trust warning; we only use homebrew/core formulae.
+          brew untap aws/tap 2>/dev/null || true
+          brew install autoconf automake libtool pkg-config libxml2 libxslt
+      - name: Build + test
+        run: |
+          set -eux
+          if [ "$RUNNER_OS" = macOS ]; then
+            xml2cfg="$(brew --prefix libxml2)/bin/xml2-config"
+            xsltcfg="$(brew --prefix libxslt)/bin/xslt-config"
+          else
+            xml2cfg=/usr/bin/xml2-config
+            xsltcfg=/usr/bin/xslt-config
+          fi
+          autoreconf -fi
+          ./configure --disable-build-docs \
+            LIBXML_CONFIG="$xml2cfg" LIBXSLT_CONFIG="$xsltcfg"
+          make -j"$(sysctl -n hw.ncpu 2>/dev/null || nproc)" man_MANS= dist_doc_DATA=
+          make check man_MANS= dist_doc_DATA=
+
+      - name: Report test results
+        if: always()
+        shell: bash
+        env:
+          LABEL: ${{ matrix.os }}
+        run: |
+          log=test-suite.log
+          if [ ! -f "$log" ]; then
+            echo "- :warning: **${LABEL}** — build failed, no tests run" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          n() { sed -n "s/^# $1:[[:space:]]*//p" "$log" | head -1; }
+          T=$(n TOTAL); P=$(n PASS); S=$(n SKIP); XF=$(n XFAIL); F=$(n FAIL); XP=$(n XPASS); E=$(n ERROR)
+          if [ "${F:-0}" = 0 ] && [ "${E:-0}" = 0 ] && [ "${XP:-0}" = 0 ]; then I=":white_check_mark:"; else I=":x:"; fi
+          echo "- ${I} **${LABEL}** — total ${T:-?}, pass ${P:-0}, fail ${F:-0}, xfail ${XF:-0}, xpass ${XP:-0}, skip ${S:-0}, error ${E:-0}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${I}" = ":x:" ]; then
+            grep -E "^(FAIL|ERROR|XPASS):" "$log" | sed "s/^/  - /" >> "$GITHUB_STEP_SUMMARY" || true
+          fi
+
+  # -------------------------------------------------------------------------
+  # Cross-compilation axis: cross-build for aarch64, 32-bit arm and riscv64
+  # with Ubuntu's native cross toolchains, then run the suite on the target
+  # binaries via qemu-user-static (transparent binfmt). libxml2/libxslt are
+  # cross-built from source at the pinned supported version, with the
+  # configure workarounds cross-compiling xmlstarlet's autotools needs.
+  # -------------------------------------------------------------------------
+  cross:
+    name: cross ${{ matrix.arch }}
+    runs-on: ubuntu-24.04
+    continue-on-error: ${{ matrix.experimental }}
+    env:
+      PREFIX: ${{ github.workspace }}/deps
+      LIBXML2: "2.12.10"
+      LIBXSLT: "1.1.42"
+      QEMU_LD_PREFIX: /usr/${{ matrix.triplet }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: aarch64, triplet: aarch64-linux-gnu,   debarch: arm64,   experimental: false }
+          - { arch: armhf,   triplet: arm-linux-gnueabihf, debarch: armhf,   experimental: false }
+          - { arch: riscv64, triplet: riscv64-linux-gnu,   debarch: riscv64, experimental: false }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Install cross toolchain + qemu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential autoconf automake libtool pkg-config \
+            wget xz-utils ca-certificates \
+            crossbuild-essential-${{ matrix.debarch }} qemu-user-static binfmt-support
+
+      - name: Cache cross libxml2 + libxslt (${{ matrix.arch }})
+        id: deps-cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.PREFIX }}
+          key: deps-cross-${{ matrix.arch }}-libxml2-${{ env.LIBXML2 }}-libxslt-${{ env.LIBXSLT }}
+
+      - name: Cross-build libxml2 + libxslt
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        env:
+          CC: ${{ matrix.triplet }}-gcc
+        run: |
+          set -eux
+          mkdir -p "$PREFIX/src"
+          cd "$PREFIX/src"
+          wget -q "https://download.gnome.org/sources/libxml2/${LIBXML2%.*}/libxml2-${LIBXML2}.tar.xz"
+          tar xf "libxml2-${LIBXML2}.tar.xz"
+          ( cd "libxml2-${LIBXML2}" && ./configure --host=${{ matrix.triplet }} \
+              --prefix="$PREFIX" --without-python --without-zlib --without-lzma \
+              && make -j"$(nproc)" && make install )
+          wget -q "https://download.gnome.org/sources/libxslt/${LIBXSLT%.*}/libxslt-${LIBXSLT}.tar.xz"
+          tar xf "libxslt-${LIBXSLT}.tar.xz"
+          ( cd "libxslt-${LIBXSLT}" && ./configure --host=${{ matrix.triplet }} \
+              --prefix="$PREFIX" --with-libxml-prefix="$PREFIX" --without-python --without-crypto \
+              && make -j"$(nproc)" && make install )
+
+      - name: Cross-build + test (qemu-user-static)
+        env:
+          CC: ${{ matrix.triplet }}-gcc
+        run: |
+          set -eux
+          autoreconf -fi
+          # cross: the malloc/realloc run-tests cannot execute, so seed their
+          # cache results (xmlstarlet's configure requires this when cross).
+          ./configure --host=${{ matrix.triplet }} --disable-build-docs \
+            ac_cv_func_malloc_0_nonnull=yes ac_cv_func_realloc_0_nonnull=yes \
+            LIBXML_CONFIG="$PREFIX/bin/xml2-config" \
+            LIBXSLT_CONFIG="$PREFIX/bin/xslt-config" \
+            LDFLAGS="-Wl,-rpath,$PREFIX/lib"
+          make -j"$(nproc)" man_MANS= dist_doc_DATA=
+          make check man_MANS= dist_doc_DATA=
+
+      - name: Report test results
+        if: always()
+        shell: bash
+        env:
+          LABEL: cross ${{ matrix.arch }}
+        run: |
+          log=test-suite.log
+          if [ ! -f "$log" ]; then
+            echo "- :warning: **${LABEL}** — build failed, no tests run" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          n() { sed -n "s/^# $1:[[:space:]]*//p" "$log" | head -1; }
+          T=$(n TOTAL); P=$(n PASS); S=$(n SKIP); XF=$(n XFAIL); F=$(n FAIL); XP=$(n XPASS); E=$(n ERROR)
+          if [ "${F:-0}" = 0 ] && [ "${E:-0}" = 0 ] && [ "${XP:-0}" = 0 ]; then I=":white_check_mark:"; else I=":x:"; fi
+          echo "- ${I} **${LABEL}** — total ${T:-?}, pass ${P:-0}, fail ${F:-0}, xfail ${XF:-0}, xpass ${XP:-0}, skip ${S:-0}, error ${E:-0}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${I}" = ":x:" ]; then
+            grep -E "^(FAIL|ERROR|XPASS):" "$log" | sed "s/^/  - /" >> "$GITHUB_STEP_SUMMARY" || true
+          fi
+
+  # -------------------------------------------------------------------------
+  # Windows: native MinGW-w64 build through the runner's preinstalled MSYS2 -
+  # the same toolchain SourceForge builds xml.exe with. No third-party action:
+  # windows-latest ships C:\msys64. Experimental until the source builds
+  # against MSYS2's current libxml2 (2.15).
+  # -------------------------------------------------------------------------
+  windows:
+    name: windows (mingw64)
+    runs-on: windows-latest
+    continue-on-error: true
+    env:
+      MSYSTEM: MINGW64
+      CHERE_INVOKING: "1"
+    defaults:
+      run:
+        shell: C:\msys64\usr\bin\bash.exe -leo pipefail {0}
+    steps:
+      # actions/checkout uses the runner's Git, which defaults to
+      # core.autocrlf=true; CRLF breaks the autotools and test shell scripts
+      # under MSYS2, so force LF before checking out.
+      - name: Keep LF line endings
+        shell: pwsh
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Install toolchain + deps (preinstalled MSYS2)
+        run: |
+          pacman --noconfirm -Sy
+          pacman --noconfirm -S --needed \
+            git autoconf automake libtool make \
+            mingw-w64-x86_64-gcc mingw-w64-x86_64-libxml2 \
+            mingw-w64-x86_64-libxslt mingw-w64-x86_64-pkgconf
+
+      - name: Build
+        run: |
+          autoreconf -fi
+          ./configure --disable-build-docs
+          make -j"$(nproc)" man_MANS= dist_doc_DATA=
+
+      - name: Test
+        # MSYS2 rewrites arguments that look like POSIX paths into Windows paths
+        # before calling the native xml.exe, which mangles absolute XPaths
+        # (/xml/table/rec -> C:/msys64/xml/table/rec). Disable that conversion
+        # for the test run; the build above still needs it for gcc's paths.
+        env:
+          MSYS2_ARG_CONV_EXCL: "*"
+        run: make check man_MANS= dist_doc_DATA=
+
+      - name: Report test results
+        if: always()
+        run: |
+          log=test-suite.log
+          if [ ! -f "$log" ]; then
+            echo "- :warning: **windows (mingw64)** — build failed, no tests run" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          n() { sed -n "s/^# $1:[[:space:]]*//p" "$log" | head -1; }
+          T=$(n TOTAL); P=$(n PASS); S=$(n SKIP); XF=$(n XFAIL); F=$(n FAIL); XP=$(n XPASS); E=$(n ERROR)
+          if [ "${F:-0}" = 0 ] && [ "${E:-0}" = 0 ] && [ "${XP:-0}" = 0 ]; then I=":white_check_mark:"; else I=":x:"; fi
+          echo "- ${I} **windows (mingw64)** — total ${T:-?}, pass ${P:-0}, fail ${F:-0}, xfail ${XF:-0}, xpass ${XP:-0}, skip ${S:-0}, error ${E:-0}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${I}" = ":x:" ]; then
+            grep -E "^(FAIL|ERROR|XPASS):" "$log" | sed "s/^/  - /" >> "$GITHUB_STEP_SUMMARY" || true
+          fi
+
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: testlogs-windows-mingw64
+          path: |
+            test-suite.log
+            examples/*.log
+            examples/*.trs
+          if-no-files-found: ignore
