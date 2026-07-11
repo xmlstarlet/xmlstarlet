@@ -49,6 +49,9 @@ xmlDocPtr xmlstarReadFile(const char *filename, const char *encoding, int option
 xmlTextReaderPtr xmlstarReaderForFile(const char *filename, const char *encoding,
                                       int options);
 xmlParserCtxtPtr xmlstarCreateFileParserCtxt(const char *filename);
+#ifdef LIBXML_HTML_ENABLED
+xmlDocPtr xmlstarHtmlReadFile(const char *filename, const char *encoding, int options);
+#endif
 
 typedef struct _gOptions {
     int quiet;            /* no error output */
