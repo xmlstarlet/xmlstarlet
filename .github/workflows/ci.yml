@@ -4,11 +4,11 @@
 # across the combinations of libxml2, libxslt, compiler and OS that matter.
 #
 # The libxml2/libxslt job builds each dependency version from source and runs
-# `make check` against it. Versions the current source already supports are
-# required (must stay green). Versions the source does not (yet) fully work
-# against are marked `experimental` (continue-on-error) - those reds are the
-# to-improve list, and get promoted to required as fixes land. This spans both
-# ends: newer libxml2 ahead of the source, and the oldest libxml2 behind it.
+# `make check` against it. Every released version the source supports is
+# required (must stay green), from the oldest (2.6.27) to the newest. Only
+# `libxml2 git` - upstream master HEAD, which can break at any time from
+# unreleased changes - stays `experimental` (continue-on-error): it's the early
+# warning, and would be promoted once a change it flags is released and handled.
 #
 # xmlstarlet's configure.ac declares the minimum as libxml2 >= 2.6.27 (libxslt
 # >= 1.1.9), and configure hard-rejects anything older (verified: 2.6.26 ->
@@ -65,14 +65,10 @@ jobs:
           - { libxml2: "2.10.4",  libxslt: "1.1.37", experimental: false }
           - { libxml2: "2.11.9",  libxslt: "1.1.39", experimental: false }
           - { libxml2: "2.12.10", libxslt: "1.1.42", experimental: false }
-          # bigxml error-line tests regressed at 2.13.0 (2.12.10 passes). 2.13.0
-          # also had 14 transient failures libxml2 fixed in 2.13.1; keep 2.13.0
-          # (regression point), 2.13.1, and 2.13.8 (latest 2.13) as markers.
-          - { libxml2: "2.13.0",  libxslt: "1.1.42", experimental: true }
-          - { libxml2: "2.13.1",  libxslt: "1.1.42", experimental: true }
-          - { libxml2: "2.13.8",  libxslt: "1.1.42", experimental: true }
-          - { libxml2: "2.14.5",  libxslt: "1.1.43", experimental: true }
-          - { libxml2: "2.15.3",  libxslt: "1.1.43", experimental: true }
+          - { libxml2: "2.13.8",  libxslt: "1.1.42", experimental: false }
+          - { libxml2: "2.14.5",  libxslt: "1.1.43", experimental: false }
+          - { libxml2: "2.15.3",  libxslt: "1.1.43", experimental: false }
+          # git = upstream master HEAD; the only experimental (non-blocking) job.
           - { libxml2: "git",     libxslt: "git",    experimental: true }
     env:
       PREFIX: ${{ github.workspace }}/deps
@@ -212,32 +208,26 @@ jobs:
           if-no-files-found: ignore
 
   # ---------------------------------------------------------------------------
-  # Compiler axis: pin the distro libxml2/libxslt, vary the compiler.
+  # Compiler axis: vary the compiler against a pinned, from-source libxml2 so
+  # the compiler is the only variable. The runner's system libxml2 varies by
+  # image (2.9 on 22.04/24.04, 2.15 on 26.04), which would confound the result.
   # ---------------------------------------------------------------------------
-  # Compiler axis: vary the compiler against a fixed, from-source libxml2 so
-  # this genuinely isolates the compiler. The runner's system libxml2 would
-  # not - it is 2.9 on 22.04/24.04 but 2.15 on 26.04, which pristine 1.6.1
-  # cannot yet build against, so it would confound the compiler result.
   compilers:
     name: ${{ matrix.cc }}
     runs-on: ${{ matrix.os }}
-    # clang errors by default on -Wincompatible-function-pointer-types, which
-    # the current source trips (xmlHashScanner const mismatch); gcc only warns.
-    # Tolerated until the source is fixed, like the newer-libxml2 jobs.
     continue-on-error: ${{ matrix.experimental }}
     env:
       PREFIX: ${{ github.workspace }}/deps
-      LIBXML2: "2.12.10"   # newest libxml2 the current source builds against
+      LIBXML2: "2.12.10"   # pinned baseline so the compiler is the only variable
       LIBXSLT: "1.1.42"
     strategy:
       fail-fast: false
       matrix:
         include:
           # gcc 9-11 on 22.04, 12-14 on 24.04, 15-16 on 26.04 (gcc-16 from
-          # 26.04 universe - native, no PPA). All gcc pass on the pristine
-          # baseline, so all are required. NB 26.04 is still a preview image, so
-          # gcc-15/16 can flake on runner availability. clang stays experimental
-          # (it errors on the xmlHashScanner const mismatch that gcc only warns).
+          # 26.04 universe - native, no PPA). All required. NB 26.04 is still a
+          # preview image, so gcc-15/16 can flake on runner availability. clang
+          # is required too now the const callback signatures match libxml2.
           - { os: ubuntu-22.04, cc: gcc-9,  experimental: false }
           - { os: ubuntu-22.04, cc: gcc-10, experimental: false }
           - { os: ubuntu-22.04, cc: gcc-11, experimental: false }
@@ -246,7 +236,7 @@ jobs:
           - { os: ubuntu-24.04, cc: gcc-14, experimental: false }
           - { os: ubuntu-26.04, cc: gcc-15, experimental: false }
           - { os: ubuntu-26.04, cc: gcc-16, experimental: false }
-          - { os: ubuntu-24.04, cc: clang,  experimental: true }
+          - { os: ubuntu-24.04, cc: clang,  experimental: false }
     steps:
       - uses: actions/checkout@v7
         with:
@@ -312,9 +302,8 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
-  # OS axis: build against each platform's own libxml2/libxslt.
-  # Non-Linux runners ship recent libxml2, so those are experimental until the
-  # source builds cleanly against current libxml2.
+  # OS axis: build against each platform's own libxml2/libxslt (Linux from the
+  # distro, macOS from Homebrew - currently 2.15). All required.
   # ---------------------------------------------------------------------------
   os:
     name: ${{ matrix.os }}
@@ -326,7 +315,7 @@ jobs:
         include:
           - { os: ubuntu-24.04,     experimental: false }
           - { os: ubuntu-24.04-arm, experimental: false }  # aarch64
-          - { os: macos-latest,     experimental: true }
+          - { os: macos-latest,     experimental: false }
     steps:
       - uses: actions/checkout@v7
         with:
@@ -394,7 +383,7 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     env:
       PREFIX: ${{ github.workspace }}/deps
-      LIBXML2: "2.12.10"
+      LIBXML2: "2.12.10"   # pinned baseline so the target arch is the only variable
       LIBXSLT: "1.1.42"
       QEMU_LD_PREFIX: /usr/${{ matrix.triplet }}
     strategy:
@@ -482,13 +471,12 @@ jobs:
   # -------------------------------------------------------------------------
   # Windows: native MinGW-w64 build through the runner's preinstalled MSYS2 -
   # the same toolchain SourceForge builds xml.exe with. No third-party action:
-  # windows-latest ships C:\msys64. Experimental until the source builds
-  # against MSYS2's current libxml2 (2.15).
+  # windows-latest ships C:\msys64.
   # -------------------------------------------------------------------------
   windows:
     name: windows (mingw64)
     runs-on: windows-latest
-    continue-on-error: true
+    continue-on-error: false
     env:
       MSYSTEM: MINGW64
       CHERE_INVOKING: "1"
