@@ -21,6 +21,15 @@
 
 #include "xmlstar.h"
 
+/* libxml2 2.14 no longer exposes ATTRIBUTE_UNUSED via its headers. */
+#ifndef ATTRIBUTE_UNUSED
+#  ifdef __GNUC__
+#    define ATTRIBUTE_UNUSED __attribute__((unused))
+#  else
+#    define ATTRIBUTE_UNUSED
+#  endif
+#endif
+
 /**
  *  Output newline and tab characters as escapes
  *  Required both for attribute values and character data (#PCDATA)
