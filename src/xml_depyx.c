@@ -136,7 +136,7 @@ pyxDePyx(char *file)
            break;
        case 'A': {
            /* attribute */
-           char *value = index(line+1, ' ');
+           char *value = strchr(line+1, ' ');
            if (value != NULL) *value++ = '\0';
            printf(" %s", line+1);
            if (value != NULL) {
