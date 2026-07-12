@@ -22,6 +22,7 @@ examples/c14n1\
 examples/c14n2\
 examples/command-help\
 examples/fo-entity\
+examples/fo-extdtd\
 examples/count1\
 examples/countnode1\
 examples/delete1\
