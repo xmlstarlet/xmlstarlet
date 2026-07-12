@@ -1,0 +1,6 @@
+#!/bin/sh
+# Regression lock (2c): fo does not do pedantic parsing - its mask has no
+# XML_PARSE_PEDANTIC - so a malformed xml:lang value produces NO warning.
+# Guards against XML_PARSE_PEDANTIC being added to the fo mask.
+./xmlstarlet fo xml/pedantic-lang.xml 2>&1 >/dev/null \
+    | grep -q 'Malformed value for xml:lang' && echo "pedantic-warned" || echo "pedantic-silent"
