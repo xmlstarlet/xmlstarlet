@@ -137,7 +137,14 @@ xml_print_dir(const char* dir)
    if((dirp = opendir(dir)) == NULL)
       return(-1);
 
-   chdir(dir);
+   /* entries are stat'd by their bare name below, so we must be in dir;
+      if that fails the listing would stat the wrong directory */
+   if(chdir(dir) != 0)
+   {
+      fprintf(stderr, "couldn't chdir to: %s\n", dir);
+      closedir(dirp);
+      return(-1);
+   }
 
    while((d = readdir(dirp)) != NULL)
    {
