@@ -579,7 +579,8 @@ edOutput(const char* filename, const XmlEdAction* ops, int ops_count,
         set_stdout_binary();
     }
 
-    save = xmlSaveToFilename(g_ops->inplace? filename : "-", NULL, save_options);
+    save = xmlSaveToFilename(g_ops->inplace? filename : "-",
+                             (const char *) doc->encoding, save_options);
     xmlSaveDoc(save, doc);
     xmlSaveClose(save);
     xmlFreeDoc(doc);
