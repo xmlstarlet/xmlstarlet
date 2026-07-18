@@ -140,18 +140,18 @@ foParseOptions(foOptionsPtr ops, int argc, char **argv)
         else if (!strcmp(argv[i], "--recover") || !strcmp(argv[i], "-R"))
         {
             ops->recovery = 1;
-	    ops->options |= XML_PARSE_RECOVER;
+            ops->options |= XML_PARSE_RECOVER;
             i++;
         }
         else if (!strcmp(argv[i], "--nocdata") || !strcmp(argv[i], "-C"))
         {
             ops->options |= XML_PARSE_NOCDATA;
-	    i++;
+            i++;
         }
         else if (!strcmp(argv[i], "--nsclean") || !strcmp(argv[i], "-N"))
         {
             ops->options |= XML_PARSE_NSCLEAN;
-	    i++;
+            i++;
         }
         else if (!strcmp(argv[i], "--indent-spaces") || !strcmp(argv[i], "-s"))
         {

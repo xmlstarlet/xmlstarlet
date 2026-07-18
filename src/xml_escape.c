@@ -84,14 +84,14 @@ put_entity_value(const char* entname, FILE* out)
 /*
  * Macro used to grow the current buffer.
  */
-#define grow_BufferReentrant() { 					\
-    buffer_size *= 2;   						\
-    buffer = (xmlChar *)						\
-    		xmlRealloc(buffer, buffer_size * sizeof(xmlChar));	\
-    if (buffer == NULL) {       					\
-	fprintf(stderr, "growing buffer error");			\
-	abort();							\
-    }									\
+#define grow_BufferReentrant() {                                        \
+    buffer_size *= 2;                                                   \
+    buffer = (xmlChar *)                                                \
+                xmlRealloc(buffer, buffer_size * sizeof(xmlChar));      \
+    if (buffer == NULL) {                                               \
+        fprintf(stderr, "growing buffer error");                        \
+        abort();                                                        \
+    }                                                                   \
 }
 
 /**
