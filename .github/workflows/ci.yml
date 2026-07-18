@@ -21,7 +21,7 @@ name: CI
 
 on:
   push:
-    branches: [master, ci]
+    branches: [master, ci, "ci/**"]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -393,6 +393,9 @@ jobs:
           - { arch: aarch64, triplet: aarch64-linux-gnu,   debarch: arm64,   experimental: false }
           - { arch: armhf,   triplet: arm-linux-gnueabihf, debarch: armhf,   experimental: false }
           - { arch: riscv64, triplet: riscv64-linux-gnu,   debarch: riscv64, experimental: false }
+          # s390x is the one big-endian target - the whole matrix is otherwise
+          # little-endian.
+          - { arch: s390x,   triplet: s390x-linux-gnu,     debarch: s390x,   experimental: false }
     steps:
       - uses: actions/checkout@v7
         with:
@@ -545,3 +548,149 @@ jobs:
             examples/*.log
             examples/*.trs
           if-no-files-found: ignore
+
+  # -------------------------------------------------------------------------
+  # BSD + Solaris axis. The User Guide (s.1.3 "Supported Platforms") lists
+  # FreeBSD/NetBSD and Solaris, but CI never proved them. Run each in a real
+  # VM on the Linux runner via vmactions, building against the platform's own
+  # packaged libxml2/libxslt (mirrors the `os` job). The Makefile is
+  # automake-generated, so GNU make (gmake) is used inside the BSDs. On a test
+  # failure the job prints test-suite.log to aid diagnosis.
+  #
+  # HP-UX and AIX are documented too but have no GitHub Actions runner or VM,
+  # so they cannot be CI'd.
+  # -------------------------------------------------------------------------
+  freebsd:
+    name: freebsd
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y git autoconf automake libtool pkgconf gmake libxml2 libxslt
+          run: |
+            set -eux
+            autoreconf -fi
+            ./configure --disable-build-docs \
+              LIBXML_CONFIG="$(command -v xml2-config)" \
+              LIBXSLT_CONFIG="$(command -v xslt-config)"
+            gmake -j"$(sysctl -n hw.ncpu)" man_MANS= dist_doc_DATA=
+            gmake check man_MANS= dist_doc_DATA=
+
+  openbsd:
+    name: openbsd
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: vmactions/openbsd-vm@v1
+        with:
+          usesh: true
+          # OpenBSD autoconf/automake are versioned and need the *_VERSION env
+          # vars (set in run:); libxml2/libxslt packages are `libxml`/`libxslt`.
+          prepare: |
+            pkg_add -I git autoconf%2.71 automake%1.16 libtool gmake pkgconf libxml libxslt
+          run: |
+            set -eux
+            export AUTOCONF_VERSION=2.71 AUTOMAKE_VERSION=1.16
+            autoreconf -fi
+            ./configure --disable-build-docs \
+              LIBXML_CONFIG="$(command -v xml2-config)" \
+              LIBXSLT_CONFIG="$(command -v xslt-config)"
+            gmake man_MANS= dist_doc_DATA=
+            gmake check man_MANS= dist_doc_DATA= \
+              || { echo '=== test-suite.log ==='; cat test-suite.log; exit 1; }
+
+  netbsd:
+    name: netbsd
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: vmactions/netbsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            /usr/sbin/pkg_add git autoconf automake libtool gmake pkg-config libxml2 libxslt
+          run: |
+            set -eux
+            autoreconf -fi
+            # pkgsrc installs libxml2/libxslt under /usr/pkg/lib, which is NOT
+            # on the default runtime linker path - without rpath the built xml
+            # binary cannot load libxml2.so at runtime, so every test that runs
+            # it yields empty stdout and the diff fails. xml2-config --prefix
+            # (the reliable, issue-13-safe way) gives the right lib dir.
+            ./configure --disable-build-docs \
+              LIBXML_CONFIG="$(command -v xml2-config)" \
+              LIBXSLT_CONFIG="$(command -v xslt-config)" \
+              LDFLAGS="-Wl,-rpath,$(xml2-config --prefix)/lib"
+            gmake man_MANS= dist_doc_DATA=
+            gmake check man_MANS= dist_doc_DATA= \
+              || { echo '=== test-suite.log ==='; cat test-suite.log; exit 1; }
+
+  omnios:
+    name: omnios (solaris/illumos)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: vmactions/omnios-vm@v1
+        with:
+          # libxml2 (and xml2-config) ship in the OmniOS base image under /usr;
+          # only libxslt and the autotools need installing. gcc14 and pkg-config
+          # are the short OOCE names; the autotools use the core developer/build/*
+          # stems.
+          prepare: |
+            pkg install gcc14 developer/build/autoconf developer/build/automake developer/build/libtool developer/build/gnu-make library/libxslt pkg-config
+          run: |
+            set -eux
+            export PATH="/opt/ooce/bin:$PATH"
+            autoreconf -fi
+            ./configure --disable-build-docs CC=gcc \
+              LIBXML_CONFIG="$(command -v xml2-config)" \
+              LIBXSLT_CONFIG="$(command -v xslt-config)" \
+              LDFLAGS="-Wl,-rpath,$(xml2-config --prefix)/lib"
+            gmake man_MANS= dist_doc_DATA=
+            gmake check man_MANS= dist_doc_DATA= \
+              || { echo '=== test-suite.log ==='; cat test-suite.log; exit 1; }
+
+  # -------------------------------------------------------------------------
+  # musl libc axis: the whole matrix above is glibc. Alpine builds the same
+  # source against musl, which can surface locale/printf/regex differences.
+  # Beyond the documented platform list - a robustness add, experimental.
+  # -------------------------------------------------------------------------
+  musl:
+    name: musl (alpine x86_64)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: alpine.sh {0}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: jirutka/setup-alpine@v1
+        with:
+          arch: x86_64
+          packages: >
+            build-base autoconf automake libtool pkgconf git
+            libxml2-dev libxslt-dev
+      - name: Build + test
+        run: |
+          set -eux
+          autoreconf -fi
+          ./configure --disable-build-docs
+          make -j"$(nproc)" man_MANS= dist_doc_DATA=
+          make check man_MANS= dist_doc_DATA=

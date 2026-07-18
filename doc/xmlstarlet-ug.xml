@@ -140,52 +140,46 @@
     <sect1>
       <title xml:id="s.1.3">Supported Platforms</title>
 
-      <para>Here is a list of platforms on which XmlStarlet is known to
-      work.</para>
+      <para>XmlStarlet is continuously built and tested by CI (GitHub
+      Actions) on the platforms below, against every libxml2 release from
+      2.6.27 through the latest:</para>
 
       <itemizedlist>
         <listitem>
-          <para>Linux</para>
+          <para>Linux — x86-64 and aarch64 natively, and cross-built and run
+          under emulation for 32-bit arm, riscv64 and big-endian s390x; also
+          built against musl libc (Alpine)</para>
+        </listitem>
+        <listitem>
+          <para>Windows — native MinGW-w64 (MSYS2)</para>
+        </listitem>
+        <listitem>
+          <para>macOS</para>
+        </listitem>
+        <listitem>
+          <para>FreeBSD, OpenBSD and NetBSD</para>
+        </listitem>
+        <listitem>
+          <para>Solaris / illumos (tested on OmniOS)</para>
         </listitem>
       </itemizedlist>
 
-      <itemizedlist>
-        <listitem>
-          <para>Solaris</para>
-        </listitem>
-      </itemizedlist>
-
-      <itemizedlist>
-        <listitem>
-          <para>Windows</para>
-        </listitem>
-      </itemizedlist>
-
-      <itemizedlist>
-        <listitem>
-          <para>MacOS X</para>
-        </listitem>
-      </itemizedlist>
-
-      <itemizedlist>
-        <listitem>
-          <para>FreeBSD/NetBSD</para>
-        </listitem>
-      </itemizedlist>
+      <para>XmlStarlet has historically also built on the platforms below.
+      These are no longer exercised by CI because no hosted build environment
+      is available for them, but XmlStarlet is expected to build wherever a C
+      compiler and libxml2/libxslt are present:</para>
 
       <itemizedlist>
         <listitem>
           <para>HP-UX</para>
         </listitem>
-      </itemizedlist>
-
-      <itemizedlist>
         <listitem>
           <para>AIX</para>
         </listitem>
       </itemizedlist>
 
-      <para>You might be able to compile and make it on others too.</para>
+      <para>You might be able to compile and run it on other platforms
+      too.</para>
     </sect1>
 
     <sect1>
