@@ -7,7 +7,10 @@ if GCC
 AM_CFLAGS = -Wall -pedantic
 endif
 
-GIT_DESCRIBE = git describe --tags --dirty
+# Resolve the version (git checkout / git-archive tarball / "make dist"
+# tarball) without ever walking up into a surrounding repository.
+GIT_DESCRIBE = sh $(srcdir)/build-aux/git-version-gen $(srcdir)
+EXTRA_DIST += build-aux/git-version-gen .git_archival.txt
 
 # TODO: figure out why log removal is needed and/or make it completely automatic
 dist-hook:
@@ -17,7 +20,7 @@ dist-hook:
 	@ if [ -d .git ] ; then \
 	    if [ $(VERSION) != `$(GIT_DESCRIBE)` ] ; then \
 		echo 'ERROR: version mismatch, rerun autoconf -f' ; exit 1 ; fi ; \
-	    $(SED) 's/\[m4_esyscmd_s(\[$(GIT_DESCRIBE)\])\]/[$(VERSION)]/' \
+	    $(SED) 's|\[m4_esyscmd_s(\[sh build-aux/git-version-gen\])\]|[$(VERSION)]|' \
 	      $(srcdir)/configure.ac > $(distdir)/configure.ac ; fi
 
 cleantar:

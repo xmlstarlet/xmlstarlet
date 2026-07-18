@@ -1,0 +1,36 @@
+#!/bin/sh
+# Emit the XMLStarlet version string. Resolution order:
+#   1. this package's own git checkout      -> git describe --tags --dirty
+#   2. a git-archive (e.g. GitHub) tarball   -> describe from .git_archival.txt
+#   3. otherwise (bare snapshot)             -> UNKNOWN
+#
+# Deliberately small and dependency-free (POSIX sh). Optional argument: the
+# source directory (defaults to the current directory), so it works for both
+# AC_INIT (run from the source root) and out-of-tree makes.
+#
+# Note: step 1 only runs when .git is in the source directory itself, so the
+# script never walks up into a surrounding repository (e.g. a distribution
+# tree that unpacked this source inside its own git checkout).
+
+srcdir=${1:-.}
+
+# 1. own git checkout
+if test -e "$srcdir/.git" ; then
+    v=`cd "$srcdir" && git describe --tags --dirty 2>/dev/null`
+    if test -n "$v" ; then
+        printf '%s\n' "$v"
+        exit 0
+    fi
+fi
+
+# 2. git-archive tarball: .git_archival.txt carries export-subst fields
+if test -f "$srcdir/.git_archival.txt" ; then
+    v=`sed -n 's/^describe-name: *//p' "$srcdir/.git_archival.txt"`
+    case $v in
+        '' | *'$Format'*) : ;;   # left unsubstituted: not a real archive
+        *) printf '%s\n' "$v" ; exit 0 ;;
+    esac
+fi
+
+# 3. no version information available
+printf 'UNKNOWN\n'
