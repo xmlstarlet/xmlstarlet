@@ -160,8 +160,8 @@ pyxCharacterData(void *userData, const xmlChar *s, int len)
 }
 
 void
-pyxProcessingInstruction(void *userData, 
-                         const xmlChar *target, 
+pyxProcessingInstruction(void *userData,
+                         const xmlChar *target,
                          const xmlChar *data)
 {
     fprintf(stdout,"?%s ",target);
@@ -176,9 +176,9 @@ pyxUnparsedEntityDeclHandler(void *userData,
                              const xmlChar *systemId,
                              const xmlChar *notationName)
 {
-    fprintf(stdout, "U%s %s %s%s%s\n", 
+    fprintf(stdout, "U%s %s %s%s%s\n",
            (char *)entityName, (char *)notationName, (char *)systemId,
-           (publicId == NULL? "": " "), 
+           (publicId == NULL? "": " "),
            (publicId == NULL? "": (char *) publicId));
 }
 
@@ -189,7 +189,7 @@ pyxNotationDeclHandler(void *userData,
                        const xmlChar *systemId)
 {
     fprintf(stdout, "N%s %s%s%s\n", (char*) notationName, (char*) systemId,
-           (publicId == NULL? "": " "), 
+           (publicId == NULL? "": " "),
            (publicId == NULL? "": (const char*) publicId));
 }
 

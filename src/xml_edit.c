@@ -47,7 +47,7 @@ THE SOFTWARE.
 /*
    TODO:
           1. Should this be allowed ?
-             ./xml ed -m /xml /xml/table/rec/object ../examples/xml/tab-obj.xml 
+             ./xml ed -m /xml /xml/table/rec/object ../examples/xml/tab-obj.xml
 */
 
 typedef struct _edOptions {   /* Global 'edit' options */
@@ -661,7 +661,7 @@ edMain(int argc, char **argv)
     start = edParseOptions(&g_ops, argc, argv);
 
     parseNSArr(ns_arr, &nCount, argc-start, argv+start);
-        
+
     /*
      *  Parse command line and fill array of operations
      */
@@ -741,7 +741,7 @@ edMain(int argc, char **argv)
     {
         edOutput("-", ops, ops_count, &g_ops);
     }
-    
+
     for (n=i; n<argc; n++)
     {
         edOutput(argv[n], ops, ops_count, &g_ops);

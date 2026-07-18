@@ -78,17 +78,17 @@ pyxDecode(char *str, xml_C14NNormalizationMode mode)
          if ((*str == '<') && ((mode == XML_C14N_NORMALIZE_ATTR) ||
                               (mode == XML_C14N_NORMALIZE_TEXT))) {
             printf("&lt;");
-         } 
+         }
          else if ((*str == '>') && (mode == XML_C14N_NORMALIZE_TEXT)) {
             printf("&gt;");
-         } 
+         }
          else if ((*str == '&') && ((mode == XML_C14N_NORMALIZE_ATTR) ||
                                      (mode == XML_C14N_NORMALIZE_TEXT))) {
             printf("&amp;");
-         } 
+         }
          else if ((*str == '"') && (mode == XML_C14N_NORMALIZE_ATTR)) {
             printf("&quot;");
-         } 
+         }
          else {
             printf("%c", *str);
          }
@@ -117,7 +117,7 @@ pyxDePyx(char *file)
           exit(EXIT_BAD_FILE);
        }
    }
-   
+
    parseattrs = 0;
    while (fgets(line, INSZ - 1, in) != NULL)
    {
@@ -209,14 +209,14 @@ depyxMain(int argc, char **argv)
        ret = pyxDePyx(argv[2]);
    }
    else if (argc == 2)
-   {  
+   {
        ret = pyxDePyx("-");
    }
    else
    {
        depyxUsage(argc, argv, EXIT_BAD_ARGS);
    }
-   
+
    printf("\n");
 
    return ret;

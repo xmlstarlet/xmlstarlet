@@ -180,7 +180,7 @@ usage(int argc, char **argv, exit_status status)
     fprint_usage(o, argv[0]);
     fprintf(o, "%s", more_info);
     exit(status);
-}  
+}
 
 /**
  *  Initialize global command line options
@@ -405,7 +405,7 @@ main(int argc, char **argv)
     gGetUnicodeOptions(argc, argv);
     gInitOptions(&globalOptions);
     gParseOptions(&globalOptions, &argc, argv);
-    
+
     xmlSetStructuredErrorFunc(&errorInfo, reportError);
     if (globalOptions.quiet)
         suppressErrors();

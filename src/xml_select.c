@@ -799,7 +799,8 @@ compareFunction(xmlXPathObjectPtr obj1, xmlXPathObjectPtr obj2,
  */
 void
 caseSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
-	           int nbsorts) {
+    int nbsorts)
+{
 #ifdef XSLT_REFACTORED
     xsltStyleItemSortPtr comp;
 #else
@@ -819,86 +820,82 @@ caseSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
         tempcaseorder[XSLT_MAX_SORT];
 
     if ((ctxt == NULL) || (sorts == NULL) || (nbsorts <= 0) ||
-	(nbsorts >= XSLT_MAX_SORT))
-	return;
+        (nbsorts >= XSLT_MAX_SORT))
+        return;
     if (sorts[0] == NULL)
-	return;
+        return;
     comp = sorts[0]->psvi;
     if (comp == NULL)
-	return;
+        return;
 
     list = ctxt->nodeList;
     if ((list == NULL) || (list->nodeNr <= 1))
-	return; /* nothing to do */
+        return; /* nothing to do */
 
     for (j = 0; j < nbsorts; j++) {
-	comp = sorts[j]->psvi;
-	tempstype[j] = 0;
-	if ((comp->stype == NULL) && (comp->has_stype != 0)) {
-	    comp->stype =
-		xsltEvalAttrValueTemplate(ctxt, sorts[j],
-					  (const xmlChar *) "data-type",
-					  XSLT_NAMESPACE);
-	    if (comp->stype != NULL) {
-		tempstype[j] = 1;
-		if (xmlStrEqual(comp->stype, (const xmlChar *) "text"))
-		    comp->number = 0;
-		else if (xmlStrEqual(comp->stype, (const xmlChar *) "number"))
-		    comp->number = 1;
-		else {
-		    xsltTransformError(ctxt, NULL, sorts[j],
-			  "xsltDoSortFunction: no support for data-type = %s\n",
-				     comp->stype);
-		    comp->number = 0; /* use default */
-		}
-	    }
-	}
-	temporder[j] = 0;
-	if ((comp->order == NULL) && (comp->has_order != 0)) {
-	    comp->order = xsltEvalAttrValueTemplate(ctxt, sorts[j],
-						    (const xmlChar *) "order",
-						    XSLT_NAMESPACE);
-	    if (comp->order != NULL) {
-		temporder[j] = 1;
-		if (xmlStrEqual(comp->order, (const xmlChar *) "ascending"))
-		    comp->descending = 0;
-		else if (xmlStrEqual(comp->order,
-				     (const xmlChar *) "descending"))
-		    comp->descending = 1;
-		else {
-		    xsltTransformError(ctxt, NULL, sorts[j],
-			     "xsltDoSortFunction: invalid value %s for order\n",
-				     comp->order);
-		    comp->descending = 0; /* use default */
-		}
-	    }
-	}
+        comp = sorts[j]->psvi;
+        tempstype[j] = 0;
+        if ((comp->stype == NULL) && (comp->has_stype != 0)) {
+            comp->stype = xsltEvalAttrValueTemplate(ctxt, sorts[j],
+                (const xmlChar *) "data-type", XSLT_NAMESPACE);
+            if (comp->stype != NULL) {
+                tempstype[j] = 1;
+                if (xmlStrEqual(comp->stype, (const xmlChar *) "text"))
+                    comp->number = 0;
+                else if (xmlStrEqual(comp->stype, (const xmlChar *) "number"))
+                    comp->number = 1;
+                else {
+                    xsltTransformError(ctxt, NULL, sorts[j],
+                        "xsltDoSortFunction: no support for data-type = %s\n",
+                        comp->stype);
+                    comp->number = 0; /* use default */
+                }
+            }
+        }
+        temporder[j] = 0;
+        if ((comp->order == NULL) && (comp->has_order != 0)) {
+            comp->order = xsltEvalAttrValueTemplate(ctxt, sorts[j],
+                (const xmlChar *) "order", XSLT_NAMESPACE);
+            if (comp->order != NULL) {
+                temporder[j] = 1;
+                if (xmlStrEqual(comp->order, (const xmlChar *) "ascending"))
+                    comp->descending = 0;
+                else if (xmlStrEqual(comp->order, (const xmlChar *) "descending"))
+                    comp->descending = 1;
+                else {
+                    xsltTransformError(ctxt, NULL, sorts[j],
+                        "xsltDoSortFunction: invalid value %s for order\n",
+                        comp->order);
+                    comp->descending = 0; /* use default */
+                }
+            }
+        }
 
         tempcaseorder[j] = 0;
-	if (comp->case_order == NULL) {
-	    comp->case_order = xsltEvalAttrValueTemplate(ctxt, sorts[j],
+        if (comp->case_order == NULL) {
+            comp->case_order = xsltEvalAttrValueTemplate(ctxt, sorts[j],
                 (const xmlChar *) "case-order", XSLT_NAMESPACE);
-	    if (comp->case_order != NULL) {
-		tempcaseorder[j] = 1;
-		if (xmlStrEqual(comp->case_order, BAD_CAST "upper-first"))
-		    comp->lower_first = 0;
-		else if (xmlStrEqual(comp->case_order, BAD_CAST "lower-first"))
-		    comp->lower_first = 1;
-		else {
-		    xsltTransformError(ctxt, NULL, sorts[j],
+            if (comp->case_order != NULL) {
+                tempcaseorder[j] = 1;
+                if (xmlStrEqual(comp->case_order, BAD_CAST "upper-first"))
+                    comp->lower_first = 0;
+                else if (xmlStrEqual(comp->case_order, BAD_CAST "lower-first"))
+                    comp->lower_first = 1;
+                else {
+                    xsltTransformError(ctxt, NULL, sorts[j],
                         "xsltDoSortFunction: invalid value %s for case-order\n",
                         comp->case_order);
-		    comp->lower_first = 0; /* use default */
-		}
-	    }
-	}
+                    comp->lower_first = 0; /* use default */
+                }
+            }
+        }
     }
 
     len = list->nodeNr;
 
     resultsTab[0] = xsltComputeSortResult(ctxt, sorts[0]);
     for (i = 1;i < XSLT_MAX_SORT;i++)
-	resultsTab[i] = NULL;
+        resultsTab[i] = NULL;
 
     results = resultsTab[0];
 
@@ -906,113 +903,113 @@ caseSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
     descending = comp->descending;
     number = comp->number;
     if (results == NULL)
-	return;
+        return;
 
     /* Shell's sort of node-set */
     for (incr = len / 2; incr > 0; incr /= 2) {
-	for (i = incr; i < len; i++) {
-	    j = i - incr;
-	    if (results[i] == NULL)
-		continue;
+        for (i = incr; i < len; i++) {
+            j = i - incr;
+            if (results[i] == NULL)
+                continue;
 
-	    while (j >= 0) {
+            while (j >= 0) {
                 if (results[j] == NULL)
                     tst = 1;
                 else
                     tst = compareFunction(results[j], results[j + incr],
                         number, comp->lower_first, descending);
 
-		if (tst == 0) {
-		    /*
-		     * Okay we need to use multi level sorts
-		     */
-		    depth = 1;
-		    while (depth < nbsorts) {
-			if (sorts[depth] == NULL)
-			    break;
-			comp = sorts[depth]->psvi;
-			if (comp == NULL)
-			    break;
-			desc = comp->descending;
-			numb = comp->number;
+                if (tst == 0) {
+                    /*
+                     * Okay we need to use multi level sorts
+                     */
+                    depth = 1;
+                    while (depth < nbsorts) {
+                        if (sorts[depth] == NULL)
+                            break;
+                        comp = sorts[depth]->psvi;
+                        if (comp == NULL)
+                            break;
+                        desc = comp->descending;
+                        numb = comp->number;
 
-			/*
-			 * Compute the result of the next level for the
-			 * full set, this might be optimized ... or not
-			 */
-			if (resultsTab[depth] == NULL)
-			    resultsTab[depth] = xsltComputeSortResult(ctxt,
-				                        sorts[depth]);
-			res = resultsTab[depth];
-			if (res == NULL)
-			    break;
-			if (res[j] == NULL) {
-			    if (res[j+incr] != NULL)
-				tst = 1;
-			} else {
+                        /*
+                         * Compute the result of the next level for the
+                         * full set, this might be optimized ... or not
+                         */
+                        if (resultsTab[depth] == NULL)
+                            resultsTab[depth] = xsltComputeSortResult(ctxt,
+                                sorts[depth]);
+                        res = resultsTab[depth];
+                        if (res == NULL)
+                            break;
+                        if (res[j] == NULL) {
+                            if (res[j+incr] != NULL)
+                                tst = 1;
+                        } else {
                             tst = compareFunction(res[j], res[j+incr],
                                 numb, comp->lower_first, desc);
                         }
 
-			/*
-			 * if we still can't differenciate at this level
-			 * try one level deeper.
-			 */
-			if (tst != 0)
-			    break;
-			depth++;
-		    }
-		}
-		if (tst == 0) {
-		    tst = results[j]->index > results[j + incr]->index;
-		}
-		if (tst > 0) {
-		    tmp = results[j];
-		    results[j] = results[j + incr];
-		    results[j + incr] = tmp;
-		    node = list->nodeTab[j];
-		    list->nodeTab[j] = list->nodeTab[j + incr];
-		    list->nodeTab[j + incr] = node;
-		    depth = 1;
-		    while (depth < nbsorts) {
-			if (sorts[depth] == NULL)
-			    break;
-			if (resultsTab[depth] == NULL)
-			    break;
-			res = resultsTab[depth];
-			tmp = res[j];
-			res[j] = res[j + incr];
-			res[j + incr] = tmp;
-			depth++;
-		    }
-		    j -= incr;
-		} else
-		    break;
-	    }
-	}
+                        /*
+                         * if we still can't differenciate at this level
+                         * try one level deeper.
+                         */
+                        if (tst != 0)
+                            break;
+                        depth++;
+                    }
+                }
+                if (tst == 0) {
+                    tst = results[j]->index > results[j + incr]->index;
+                }
+                if (tst > 0) {
+                    tmp = results[j];
+                    results[j] = results[j + incr];
+                    results[j + incr] = tmp;
+                    node = list->nodeTab[j];
+                    list->nodeTab[j] = list->nodeTab[j + incr];
+                    list->nodeTab[j + incr] = node;
+                    depth = 1;
+                    while (depth < nbsorts) {
+                        if (sorts[depth] == NULL)
+                            break;
+                        if (resultsTab[depth] == NULL)
+                            break;
+                        res = resultsTab[depth];
+                        tmp = res[j];
+                        res[j] = res[j + incr];
+                        res[j + incr] = tmp;
+                        depth++;
+                    }
+                    j -= incr;
+                } else
+                    break;
+            }
+        }
     }
 
     for (j = 0; j < nbsorts; j++) {
-	comp = sorts[j]->psvi;
-	if (tempstype[j] == 1) {
-	    /* The data-type needs to be recomputed each time */
-	    xmlFree((void *)(comp->stype));
-	    comp->stype = NULL;
-	}
-	if (temporder[j] == 1) {
-	    /* The order needs to be recomputed each time */
-	    xmlFree((void *)(comp->order));
-	    comp->order = NULL;
-	}
-	if (tempcaseorder[j] == 1) {
-	    /* The case-order needs to be recomputed each time */
-	    xmlFree((void *)(comp->case_order));
-	    comp->case_order = NULL;
-	}
-	if (resultsTab[j] != NULL) {
-	    for (i = 0;i < len;i++)
-		xmlXPathFreeObject(resultsTab[j][i]);
-	    xmlFree(resultsTab[j]);
-	}
+        comp = sorts[j]->psvi;
+        if (tempstype[j] == 1) {
+            /* The data-type needs to be recomputed each time */
+            xmlFree((void *)(comp->stype));
+            comp->stype = NULL;
+        }
+        if (temporder[j] == 1) {
+            /* The order needs to be recomputed each time */
+            xmlFree((void *)(comp->order));
+            comp->order = NULL;
+        }
+        if (tempcaseorder[j] == 1) {
+            /* The case-order needs to be recomputed each time */
+            xmlFree((void *)(comp->case_order));
+            comp->case_order = NULL;
+        }
+        if (resultsTab[j] != NULL) {
+            for (i = 0;i < len;i++)
+                xmlXPathFreeObject(resultsTab[j][i]);
+            xmlFree(resultsTab[j]);
+        }
     }
 }

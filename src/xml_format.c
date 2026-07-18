@@ -56,7 +56,7 @@ typedef struct _foOptions {
     int omit_decl;            /* omit xml declaration */
     int recovery;             /* try to recover what is parsable */
     int dropdtd;              /* remove the DOCTYPE of the input docs */
-    int options;              /* global parsing flags */ 
+    int options;              /* global parsing flags */
 #ifdef LIBXML_HTML_ENABLED
     int html;                 /* inputs are in HTML format */
 #endif
@@ -140,18 +140,18 @@ foParseOptions(foOptionsPtr ops, int argc, char **argv)
         else if (!strcmp(argv[i], "--recover") || !strcmp(argv[i], "-R"))
         {
             ops->recovery = 1;
-	    ops->options |= XML_PARSE_RECOVER;
+            ops->options |= XML_PARSE_RECOVER;
             i++;
         }
         else if (!strcmp(argv[i], "--nocdata") || !strcmp(argv[i], "-C"))
         {
             ops->options |= XML_PARSE_NOCDATA;
-	    i++;
+            i++;
         }
         else if (!strcmp(argv[i], "--nsclean") || !strcmp(argv[i], "-N"))
         {
             ops->options |= XML_PARSE_NSCLEAN;
-	    i++;
+            i++;
         }
         else if (!strcmp(argv[i], "--indent-spaces") || !strcmp(argv[i], "-s"))
         {
@@ -228,14 +228,14 @@ foProcess(foOptionsPtr ops, int start, int argc, char **argv)
         strcmp(argv[start-1], "--indent-spaces") &&
         strcmp(argv[start-1], "-s"))
     {
-        fileName = argv[start];   
+        fileName = argv[start];
     }
 /*
     if (ops->recovery)
     {
         doc = xmlRecoverFile(fileName);
     }
-    else    
+    else
 */
     if (ops->quiet)
         suppressErrors();
@@ -332,6 +332,6 @@ foMain(int argc, char **argv)
     start = foParseOptions(&ops, argc, argv);
     if (argc-start > 1) foUsage(argc, argv, EXIT_BAD_ARGS);
     ret = foProcess(&ops, start, argc, argv);
-    
+
     return ret;
 }

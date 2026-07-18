@@ -93,7 +93,7 @@ xsltTransform(xsltOptionsPtr ops, xmlDocPtr doc, const char** params,
     if (ctxt == NULL) return NULL;
 
     res = xsltApplyStylesheetUser(cur, doc, params, NULL, NULL, ctxt);
-        
+
     if (ctxt->state == XSLT_STATE_ERROR)
         errorno = 9;
     if (ctxt->state == XSLT_STATE_STOPPED)
@@ -153,7 +153,7 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
     else
     {
         if (ops->embed)
-        {             
+        {
             cur = xsltLoadStylesheetPI(style);
             if (cur != NULL)
             {
@@ -161,8 +161,8 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
                 xsltProcess(ops, style, params, cur, xsl);
                 xsltFreeStylesheet(cur);
                 cur = NULL;
-            }            
-            for (i=0; i<count; i++) 
+            }
+            for (i=0; i<count; i++)
             {
                 style = xmlstarReadFile((const char *) docs[i], NULL, options);
                 if (style == NULL)
@@ -179,10 +179,10 @@ int xsltRun(xsltOptionsPtr ops, char* xsl, const char** params,
                     xsltFreeStylesheet(cur);
                     cur = NULL;
                 }
-            } 
+            }
             goto done;
         }
-        
+
         cur = xsltParseStylesheetDoc(style);
         if (cur != NULL)
         {

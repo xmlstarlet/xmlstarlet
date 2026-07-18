@@ -37,7 +37,7 @@ typedef enum {
 
 extern xmlChar *xml_C11NNormalizeString(const xmlChar * input,
                                  xml_C14NNormalizationMode mode);
-                                       
+
 #define  xml_C11NNormalizeAttr( a ) \
     xml_C11NNormalizeString((a), XML_C14N_NORMALIZE_ATTR)
 #define  xml_C11NNormalizeComment( a ) \

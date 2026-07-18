@@ -46,7 +46,7 @@ THE SOFTWARE.
 
 /*
  *   TODO: Use cases
- *   1. find malfomed XML documents in a given set of XML files 
+ *   1. find malfomed XML documents in a given set of XML files
  *   2. find XML documents which do not match DTD/XSD in a given set of XML files
  *   3. precompile DTD once
  */
@@ -215,9 +215,9 @@ valAgainstDtd(valOptionsPtr ops, char* dtdvalid, xmlDocPtr doc, char* filename)
         xmlDtdPtr dtd;
 
 #if !defined(LIBXML_VALID_ENABLED)
-	xmlGenericError(xmlGenericErrorContext,
-	"libxml2 has no validation support");
-	return 2;
+        xmlGenericError(xmlGenericErrorContext,
+        "libxml2 has no validation support");
+        return 2;
 #endif
         dtd = xmlParseDTD(NULL, (const xmlChar *)dtdvalid);
         if (dtd == NULL)
@@ -230,13 +230,13 @@ valAgainstDtd(valOptionsPtr ops, char* dtdvalid, xmlDocPtr doc, char* filename)
         {
             xmlValidCtxtPtr cvp;
 
-            if ((cvp = xmlNewValidCtxt()) == NULL) 
+            if ((cvp = xmlNewValidCtxt()) == NULL)
             {
                 xmlGenericError(xmlGenericErrorContext,
                     "Couldn't allocate validation context\n");
                 exit(-1);
             }
-        
+
             if (ops->err)
             {
                 cvp->userData = (void *) stderr;
@@ -249,7 +249,7 @@ valAgainstDtd(valOptionsPtr ops, char* dtdvalid, xmlDocPtr doc, char* filename)
                 cvp->error    = (xmlValidityErrorFunc) NULL;
                 cvp->warning  = (xmlValidityWarningFunc) NULL;
             }
-                        
+
             if (!xmlValidateDtd(cvp, doc, dtd))
             {
                 if ((ops->listGood < 0) && !ops->show_val_res)
@@ -319,7 +319,7 @@ valMain(int argc, char **argv)
             doc = xmlstarReadFile(argv[i], NULL, options);
             if (doc)
             {
-                /* TODO: precompile DTD once */                
+                /* TODO: precompile DTD once */
                 failed = valAgainstDtd(&ops, ops.dtd, doc, argv[i]);
                 xmlFreeDoc(doc);
             }

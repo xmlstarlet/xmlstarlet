@@ -3,7 +3,7 @@
  *  (http://www.w3.org/TR/2001/REC-xml-c14n-20010315)
  *
  *  See Copyright for the status of this software.
- * 
+ *
  *  Author: Aleksey Sanin <aleksey@aleksey.com>
  */
 
@@ -42,12 +42,12 @@ load_xpath_expr (xmlDocPtr parent_doc, const char* filename);
 
 static xmlChar **parse_list(xmlChar *str);
 
-static int 
+static int
 run_c14n(const char* xml_filename, int with_comments, int exclusive,
          const char* xpath_filename, xmlChar **inclusive_namespaces,
          int nonet) {
     xmlDocPtr doc;
-    xmlXPathObjectPtr xpath = NULL; 
+    xmlXPathObjectPtr xpath = NULL;
     int ret;
 
     /*
@@ -62,24 +62,24 @@ run_c14n(const char* xml_filename, int with_comments, int exclusive,
         fprintf(stderr, "Error: unable to parse file \"%s\"\n", xml_filename);
         return(EXIT_BAD_FILE);
     }
-    
+
     /*
      * Check the document is of the right kind
-     */    
+     */
     if(xmlDocGetRootElement(doc) == NULL) {
         fprintf(stderr,"Error: empty document for file \"%s\"\n", xml_filename);
         xmlFreeDoc(doc);
         return(EXIT_BAD_FILE);
     }
 
-    /* 
-     * load xpath file if specified 
+    /*
+     * load xpath file if specified
      */
     if(xpath_filename) {
         xpath = load_xpath_expr(doc, xpath_filename);
         if(xpath == NULL) {
             fprintf(stderr,"Error: unable to evaluate xpath expression\n");
-            xmlFreeDoc(doc); 
+            xmlFreeDoc(doc);
             return(EXIT_BAD_FILE);
         }
     }
@@ -98,19 +98,19 @@ run_c14n(const char* xml_filename, int with_comments, int exclusive,
         xmlFreeDoc(doc);
         return(EXIT_FAILURE);
     }
- 
+
     /*
      * Cleanup
-     */ 
+     */
     if(xpath != NULL) xmlXPathFreeObject(xpath);
-    xmlFreeDoc(doc);    
+    xmlFreeDoc(doc);
 
     return(ret >= 0? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 int c14nMain(int argc, char **argv) {
     int ret = -1, nonet = 1;
-    
+
     /*
      * Parse command line and process file
      */
@@ -135,14 +135,14 @@ int c14nMain(int argc, char **argv) {
         ret = run_c14n(argv[3], 0, 0, (argc > 4) ? argv[4] : NULL, NULL, nonet);
     } else if(strcmp(argv[2], "--exc-with-comments") == 0) {
         xmlChar **list;
-        
+
         /* load exclusive namespace from command line */
         list = (argc > 5) ? parse_list((xmlChar *)argv[5]) : NULL;
         ret = run_c14n(argv[3], 1, 1, (argc > 4) ? argv[4] : NULL, list, nonet);
         if(list != NULL) xmlFree(list);
     } else if(strcmp(argv[2], "--exc-without-comments") == 0) {
         xmlChar **list;
-        
+
         /* load exclusive namespace from command line */
         list = (argc > 5) ? parse_list((xmlChar *)argv[5]) : NULL;
         ret = run_c14n(argv[3], 0, 1, (argc > 4) ? argv[4] : NULL, list, nonet);
@@ -191,7 +191,7 @@ parse_list(xmlChar *str) {
     buffer_size = 1000;
     buffer = xmlMalloc(buffer_size * sizeof(xmlChar*));
     out = buffer;
-    
+
     while(*str != '\0') {
         if (out - buffer > buffer_size - 10) {
             int indx = out - buffer;
@@ -209,13 +209,13 @@ parse_list(xmlChar *str) {
 
 static xmlXPathObjectPtr
 load_xpath_expr (xmlDocPtr parent_doc, const char* filename) {
-    xmlXPathObjectPtr xpath; 
+    xmlXPathObjectPtr xpath;
     xmlDocPtr doc;
     xmlChar *expr;
-    xmlXPathContextPtr ctx; 
+    xmlXPathContextPtr ctx;
     xmlNodePtr node;
     xmlNsPtr ns;
-    
+
     /*
      * load XPath expr as a file
      */
@@ -224,10 +224,10 @@ load_xpath_expr (xmlDocPtr parent_doc, const char* filename) {
         fprintf(stderr, "Error: unable to parse file \"%s\"\n", filename);
         return(NULL);
     }
-    
+
     /*
      * Check the document is of the right kind
-     */    
+     */
     if(xmlDocGetRootElement(doc) == NULL) {
         fprintf(stderr,"Error: empty document for file \"%s\"\n", filename);
         xmlFreeDoc(doc);
@@ -238,8 +238,8 @@ load_xpath_expr (xmlDocPtr parent_doc, const char* filename) {
     while(node != NULL && !xmlStrEqual(node->name, (const xmlChar *)"XPath")) {
         node = node->next;
     }
-    
-    if(node == NULL) {   
+
+    if(node == NULL) {
         fprintf(stderr,"Error: XPath element expected in the file  \"%s\"\n", filename);
         xmlFreeDoc(doc);
         return(NULL);
@@ -255,8 +255,8 @@ load_xpath_expr (xmlDocPtr parent_doc, const char* filename) {
     ctx = xmlXPathNewContext(parent_doc);
     if(ctx == NULL) {
         fprintf(stderr,"Error: unable to create new context\n");
-        xmlFree(expr); 
-        xmlFreeDoc(doc); 
+        xmlFree(expr);
+        xmlFreeDoc(doc);
         return(NULL);
     }
 
@@ -267,29 +267,29 @@ load_xpath_expr (xmlDocPtr parent_doc, const char* filename) {
     while(ns != NULL) {
         if(xmlXPathRegisterNs(ctx, ns->prefix, ns->href) != 0) {
             fprintf(stderr,"Error: unable to register NS with prefix=\"%s\" and href=\"%s\"\n", ns->prefix, ns->href);
-                xmlFree(expr); 
-            xmlXPathFreeContext(ctx); 
-            xmlFreeDoc(doc); 
+                xmlFree(expr);
+            xmlXPathFreeContext(ctx);
+            xmlFreeDoc(doc);
             return(NULL);
         }
         ns = ns->next;
     }
 
-    /*  
+    /*
      * Evaluate xpath
      */
     xpath = xmlXPathEvalExpression(expr, ctx);
     if(xpath == NULL) {
         fprintf(stderr,"Error: unable to evaluate xpath expression\n");
-            xmlFree(expr); 
-        xmlXPathFreeContext(ctx); 
-        xmlFreeDoc(doc); 
+            xmlFree(expr);
+        xmlXPathFreeContext(ctx);
+        xmlFreeDoc(doc);
         return(NULL);
     }
 
-    xmlFree(expr); 
-    xmlXPathFreeContext(ctx); 
-    xmlFreeDoc(doc); 
+    xmlFree(expr);
+    xmlXPathFreeContext(ctx);
+    xmlFreeDoc(doc);
     return(xpath);
 }
 

@@ -84,17 +84,17 @@ put_entity_value(const char* entname, FILE* out)
 /*
  * Macro used to grow the current buffer.
  */
-#define grow_BufferReentrant() { 					\
-    buffer_size *= 2;   						\
-    buffer = (xmlChar *)						\
-    		xmlRealloc(buffer, buffer_size * sizeof(xmlChar));	\
-    if (buffer == NULL) {       					\
-	fprintf(stderr, "growing buffer error");			\
-	abort();							\
-    }									\
+#define grow_BufferReentrant() {                                        \
+    buffer_size *= 2;                                                   \
+    buffer = (xmlChar *)                                                \
+                xmlRealloc(buffer, buffer_size * sizeof(xmlChar));      \
+    if (buffer == NULL) {                                               \
+        fprintf(stderr, "growing buffer error");                        \
+        abort();                                                        \
+    }                                                                   \
 }
 
-/** 
+/**
  * xml_C11NNormalizeString:
  * @input: the input string
  * @mode:  the normalization mode (attribute, comment, PI or text)
@@ -253,10 +253,10 @@ escMain(int argc, char **argv, int escape)
 {
     int ret = 0;
     int readStdIn = 0;
-        
+
     char* inp = NULL;
     xmlChar* outBuf = NULL;
-    
+
     if (argc < 2) escUsage(argc, argv, escape, EXIT_BAD_ARGS);
 
     inp = argv[2];
@@ -270,7 +270,7 @@ escMain(int argc, char **argv, int escape)
     }
     else
     {
-        readStdIn = 1;        
+        readStdIn = 1;
     }
 
     if (readStdIn)
@@ -310,7 +310,7 @@ escMain(int argc, char **argv, int escape)
        }
        return ret;
     }
-    
+
     if (escape)
     {
         outBuf = xmlEncodeEntitiesReentrant(NULL, (xmlChar*) inp);
@@ -330,6 +330,6 @@ escMain(int argc, char **argv, int escape)
                 fprintf(stderr, "partial entity: %s\n", partial_entity);
         }
     }
-        
+
     return ret;
 }

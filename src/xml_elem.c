@@ -169,10 +169,10 @@ parse_xml_file(const char *filename)
 void
 elInitOptions(elOptions *ops)
 {
-    ops->show_attr = 0;  
+    ops->show_attr = 0;
     ops->show_attr_and_val = 0;
     ops->sort_uniq = 0;
-    ops->check_depth = 0; 
+    ops->check_depth = 0;
 }
 
 typedef struct {
@@ -224,7 +224,7 @@ elMain(int argc, char **argv)
     elInitOptions(&elOps);
 
     if (argc == 2)
-        errorno = parse_xml_file("-");  
+        errorno = parse_xml_file("-");
     else
     {
         if (!strcmp(argv[2], "--help") || !strcmp(argv[2], "-h") ||
@@ -251,13 +251,13 @@ elMain(int argc, char **argv)
             uniq = xmlHashCreate(0);
             errorno = parse_xml_file(inp_file);
         }
-        else if (!strncmp(argv[2], "-d", 2)) 
-        { 
-            elOps.check_depth = atoi(argv[2]+2); 
-            elOps.sort_uniq = 1; 
+        else if (!strncmp(argv[2], "-d", 2))
+        {
+            elOps.check_depth = atoi(argv[2]+2);
+            elOps.sort_uniq = 1;
             if (argc >= 4) inp_file = argv[3];
             uniq = xmlHashCreate(0);
-            errorno = parse_xml_file(inp_file); 
+            errorno = parse_xml_file(inp_file);
         }
         else if (argv[2][0] != '-')
         {

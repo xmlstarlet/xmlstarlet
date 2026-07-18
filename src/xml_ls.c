@@ -161,9 +161,9 @@ xml_print_dir(const char* dir)
 
 #if defined (__MINGW32__)
       /* somehow atime is -1 on Windows XP when the atime is in future */
-      if (stats.st_atime < 0) stats.st_atime = 0; 
+      if (stats.st_atime < 0) stats.st_atime = 0;
       /* somehow mtime is -1 on Windows XP when the mtime is in future */
-      if (stats.st_mtime < 0) stats.st_mtime = 0; 
+      if (stats.st_mtime < 0) stats.st_mtime = 0;
 #endif
 
       /* format time as per ISO 8601 */

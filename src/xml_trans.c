@@ -141,13 +141,13 @@ trParseParams(const char** params, int* plen,
             {
                 int j;
                 xmlChar *name, *value;
-                
+
                 i++;
                 if (i >= count) trUsage(argv[0], EXIT_BAD_ARGS);
 
                 for(j=0; argv[i][j] && (argv[i][j] != '='); j++);
                 if (argv[i][j] != '=') trUsage(argv[0], EXIT_BAD_ARGS);
-                
+
                 name = xmlStrndup((const xmlChar *) argv[i], j);
                 value = xmlStrdup((const xmlChar *) argv[i]+j+1);
 
@@ -160,7 +160,7 @@ trParseParams(const char** params, int* plen,
                 params[*plen] = (char *)name;
                 (*plen)++;
                 params[*plen] = (char *)value;
-                (*plen)++;                
+                (*plen)++;
                 params[*plen] = 0;
             }
             else if (!strcmp(argv[i], "-s"))
@@ -214,7 +214,7 @@ trParseParams(const char** params, int* plen,
             break;
     }
 
-    return i;    
+    return i;
 }
 
 /**
@@ -244,7 +244,7 @@ trMain(int argc, char **argv)
     int errorno = 0;
     int start, xslt_ind;
     int pCount;
-    
+
     if (argc <= 2) trUsage(argv[0], EXIT_BAD_ARGS);
 
     xsltInitOptions(&ops);
@@ -254,13 +254,13 @@ trMain(int argc, char **argv)
 
     /* set parameters */
     start += trParseParams(xsltParams, &pCount, argc-start-1, argv+start+1);
-    
+
     /* run transformation */
     errorno = xsltRun(&ops, argv[xslt_ind], xsltParams,
                       argc-start-1, argv+start+1);
 
     /* free resources */
     trCleanupParams(xsltParams);
-    
-    return errorno;                                                
+
+    return errorno;
 }
