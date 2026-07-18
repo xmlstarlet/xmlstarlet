@@ -1,0 +1,7 @@
+#!/bin/sh
+# fo --omit-decl must exit 0 on success, not the output byte count.
+# Regression test for bsc#1231165: on libxml2 < 2.14, xmlOutputBufferClose()
+# returns the number of bytes written, and the old output path used it as the
+# exit status, so `fo --omit-decl` exited with (bytes written % 256). Fixed by
+# the xmlSave migration (xmlSaveToFd/xmlSaveClose).
+./xmlstarlet fo --omit-decl xml/foo.xml >/dev/null 2>&1; echo $?

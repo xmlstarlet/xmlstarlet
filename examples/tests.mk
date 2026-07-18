@@ -23,6 +23,7 @@ examples/c14n2\
 examples/command-help\
 examples/fo-entity\
 examples/fo-extdtd\
+examples/fo-omit-decl\
 examples/fo-pedantic\
 examples/count1\
 examples/countnode1\
