@@ -16,10 +16,14 @@ examples/bigxml-xsd
 
 QUICK_TESTS =\
 examples/c14n-default-attr\
+examples/c14n-extdtd\
 examples/c14n-newlines\
 examples/c14n1\
 examples/c14n2\
 examples/command-help\
+examples/fo-entity\
+examples/fo-extdtd\
+examples/fo-pedantic\
 examples/count1\
 examples/countnode1\
 examples/delete1\
@@ -84,6 +88,7 @@ examples/tab1\
 examples/table1\
 examples/table2\
 examples/table3\
+examples/val-lineno\
 examples/unicode1\
 examples/update-attr1\
 examples/update-elem1\

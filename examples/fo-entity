@@ -1,0 +1,8 @@
+#!/bin/sh
+# Regression lock: 'fo' does not substitute entity references, because its
+# parse mask carries no XML_PARSE_NOENT. &foo; must survive as a reference in
+# the output (guards against XML_PARSE_NOENT being added to the fo mask).
+# --dropdtd removes the DOCTYPE so the entity declaration cannot cause a false
+# match; only the element content is inspected.
+./xmlstarlet fo --dropdtd xml/fo-entity.xml 2>&1 \
+    | grep -q '&foo;' && echo "entity-preserved" || echo "entity-substituted"

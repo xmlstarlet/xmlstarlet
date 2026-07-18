@@ -1,0 +1,7 @@
+#!/bin/sh
+# Regression lock: 'c14n' loads an EXTERNAL DTD (XML_PARSE_DTDLOAD) and applies
+# its default attributes (XML_PARSE_DTDATTR). The doc has an empty <doc/> whose
+# attr="default" comes only from the external DTD, so a match proves both flags
+# are honoured by c14n's parse mask.
+./xmlstarlet c14n xml/c14n-extdtd.xml 2>&1 \
+    | grep -q 'attr="default"' && echo "extdtd-attr-applied" || echo "extdtd-attr-missing"

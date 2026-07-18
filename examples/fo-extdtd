@@ -1,0 +1,8 @@
+#!/bin/sh
+# Regression lock (2b/2e, fo side): fo does not load external DTDs - its parse
+# mask has no XML_PARSE_DTDLOAD - so an external DTD's default attribute is NOT
+# applied (contrast c14n-extdtd, where c14n does load it and applies it).
+# Reuses the c14n-extdtd fixtures. Guards against DTDLOAD/DTDVALID being added
+# to the fo mask.
+./xmlstarlet fo xml/c14n-extdtd.xml 2>&1 \
+    | grep -q 'attr="default"' && echo "extdtd-attr-applied" || echo "extdtd-attr-ignored"
