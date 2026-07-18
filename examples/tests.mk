@@ -71,6 +71,7 @@ examples/recover1\
 examples/rename-attr1\
 examples/rename-elem1\
 examples/schema1\
+examples/sel-comp\
 examples/sel-literal\
 examples/sel-if\
 examples/sel-many-values\

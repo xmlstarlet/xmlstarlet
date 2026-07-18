@@ -1,0 +1,7 @@
+#!/bin/sh
+# --comp is a documented alias for -C (display the generated XSLT), MR#7.
+# Compare the two outputs directly, so the test doesn't depend on the exact
+# XSLT serialization (which can differ between libxml2 versions).
+comp=$(./xmlstarlet sel --comp -t -v '/foo' xml/foo.xml 2>&1)
+capc=$(./xmlstarlet sel -C -t -v '/foo' xml/foo.xml 2>&1)
+if [ "$comp" = "$capc" ]; then echo same; else echo differ; fi

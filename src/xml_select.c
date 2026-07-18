@@ -193,7 +193,7 @@ selParseOptions(selOptionsPtr ops, int argc, char **argv)
     i = 2;
     while((i < argc) && (strcmp(argv[i], "-t")) && strcmp(argv[i], "--template"))
     {
-        if (!strcmp(argv[i], "-C"))
+        if (!strcmp(argv[i], "-C") || !strcmp(argv[i], "--comp"))
         {
             ops->printXSLT = 1;
         }
