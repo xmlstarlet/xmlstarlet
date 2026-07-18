@@ -1,5 +1,5 @@
 #!/bin/sh
-./xmlstarlet depyx - << EOT | head -c50
+./xmlstarlet depyx - << EOT | dd bs=1 count=50 2>/dev/null
 (book
 Atype hardback
 EOT
