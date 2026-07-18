@@ -256,7 +256,6 @@ elMain(int argc, char **argv)
         else if (!strncmp(argv[2], "-d", 2)) 
         { 
             elOps.check_depth = atoi(argv[2]+2); 
-            /* printf("Checking depth (%d)\n", elOps.check_depth); */ 
             elOps.sort_uniq = 1; 
             if (argc >= 4) inp_file = argv[3];
             uniq = xmlHashCreate(0);

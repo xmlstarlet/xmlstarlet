@@ -253,7 +253,6 @@ foProcess(foOptionsPtr ops, int start, int argc, char **argv)
 
     if (doc == NULL)
     {
-        /*fprintf(stderr, "%s:: error: XML parse error\n", fileName);*/
         return 2;
     }
 

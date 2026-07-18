@@ -44,10 +44,6 @@ load_xpath_expr (xmlDocPtr parent_doc, const char* filename);
 
 static xmlChar **parse_list(xmlChar *str);
 
-#if 0
-static void print_xpath_nodes(xmlNodeSetPtr nodes);
-#endif
-
 static int 
 run_c14n(const char* xml_filename, int with_comments, int exclusive,
          const char* xpath_filename, xmlChar **inclusive_namespaces,
@@ -293,46 +289,11 @@ load_xpath_expr (xmlDocPtr parent_doc, const char* filename) {
         return(NULL);
     }
 
-    /* print_xpath_nodes(xpath->nodesetval); */
-
     xmlFree(expr); 
     xmlXPathFreeContext(ctx); 
     xmlFreeDoc(doc); 
     return(xpath);
 }
-
-#if 0
-static void
-print_xpath_nodes(xmlNodeSetPtr nodes) {
-    xmlNodePtr cur;
-    int i;
-    
-    if(nodes == NULL ){ 
-        fprintf(stderr, "Error: no nodes set defined\n");
-        return;
-    }
-    
-    fprintf(stderr, "Nodes Set:\n-----\n");
-    for(i = 0; i < nodes->nodeNr; ++i) {
-        if(nodes->nodeTab[i]->type == XML_NAMESPACE_DECL) {
-            xmlNsPtr ns;
-            
-            ns = (xmlNsPtr)nodes->nodeTab[i];
-            cur = (xmlNodePtr)ns->next;
-            fprintf(stderr, "namespace \"%s\"=\"%s\" for node %s:%s\n", 
-                    ns->prefix, ns->href,
-                    (cur->ns) ? cur->ns->prefix : BAD_CAST "", cur->name);
-        } else if(nodes->nodeTab[i]->type == XML_ELEMENT_NODE) {
-            cur = nodes->nodeTab[i];    
-            fprintf(stderr, "element node \"%s:%s\"\n", 
-                    (cur->ns) ? cur->ns->prefix : BAD_CAST "", cur->name);
-        } else {
-            cur = nodes->nodeTab[i];    
-            fprintf(stderr, "node \"%s\": type %d\n", cur->name, cur->type);
-        }
-    }
-}
-#endif
 
 #else
 #include <stdio.h>
