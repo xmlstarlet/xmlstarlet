@@ -1,5 +1,3 @@
-/* $Id: xml_pyx.c,v 1.9 2005/03/12 03:24:23 mgrouch Exp $ */
-
 /**
  *  Based on xmln from pyxie project
  *

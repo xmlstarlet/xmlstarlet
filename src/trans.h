@@ -1,5 +1,3 @@
-/*  $Id: trans.h,v 1.11 2004/11/21 23:40:40 mgrouch Exp $  */
-
 #ifndef __TRANS_H
 #define __TRANS_H
 

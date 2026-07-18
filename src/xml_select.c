@@ -1,5 +1,3 @@
-/*  $Id: xml_select.c,v 1.67 2005/01/07 02:02:13 mgrouch Exp $  */
-
 /*
 
 XMLStarlet: Command Line Toolkit to query/edit/check/transform XML documents

@@ -1,5 +1,3 @@
-/*  $Id: xml_validate.c,v 1.36 2005/01/07 01:52:43 mgrouch Exp $  */
-
 /*
 
 XMLStarlet: Command Line Toolkit to query/edit/check/transform XML documents

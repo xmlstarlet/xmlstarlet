@@ -1,5 +1,3 @@
-/*  $Id: escape.h,v 1.2 2005/03/12 03:24:23 mgrouch Exp $  */
-
 #ifndef __ESCAPE_H
 #define __ESCAPE_H
 

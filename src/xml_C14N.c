@@ -1,6 +1,4 @@
 /*
- *  $Id: xml_C14N.c,v 1.12 2004/11/24 03:00:10 mgrouch Exp $
- *
  *  Canonical XML implementation test program
  *  (http://www.w3.org/TR/2001/REC-xml-c14n-20010315)
  *

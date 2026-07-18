@@ -1,5 +1,3 @@
-/*  $Id: xml_depyx.c,v 1.8 2005/03/12 03:24:23 mgrouch Exp $  */
-
 /*
 
 XMLStarlet: Command Line Toolkit to query/edit/check/transform XML documents
