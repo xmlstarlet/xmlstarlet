@@ -687,6 +687,8 @@ do_file(const char *filename, xmlDocPtr style_tree,
             *status = EXIT_SUCCESS;
             if (ops->quiet) exit(EXIT_SUCCESS);
         }
+
+        xmlFreeDoc(res);
     } else {
         *status = EXIT_BAD_FILE;
     }

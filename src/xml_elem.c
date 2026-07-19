@@ -160,6 +160,8 @@ parse_xml_file(const char *filename)
 
     }
 
+    xmlFreeTextReader(reader);
+
     return ret == -1? EXIT_LIB_ERROR : ret;
 }
 

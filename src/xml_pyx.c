@@ -260,10 +260,9 @@ pyx_process_file(const char *filename)
     if (!ctxt) /* assume it failed because of filename */
         return EXIT_BAD_FILE;
 
-    ctxt->sax = &pyxSAX;
+    *ctxt->sax = pyxSAX;
     ret = xmlParseDocument(ctxt);
 
-    ctxt->sax = NULL; /* don't try to free pyxSAX */
     xmlFreeParserCtxt(ctxt);
 
     return (ret == 0)? 0 : EXIT_LIB_ERROR;

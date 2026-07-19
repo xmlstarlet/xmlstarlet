@@ -399,6 +399,7 @@ valMain(int argc, char **argv)
                 goto schemaCleanup;
             }
 
+            xmlRelaxNGFreeParserCtxt(relaxngParserCtxt);
         }
 #endif  /* LIBXML_SCHEMAS_ENABLED */
 
