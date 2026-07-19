@@ -33,7 +33,11 @@ dnl
 dnl Check the environment
 dnl
 
-AC_DEFINE([_XOPEN_SOURCE], [500], [needed to get lstat declaration in -ansi mode])
+dnl -ansi hides POSIX declarations until a conformance level is requested.
+dnl 600 (POSIX.1-2001) exposes lstat on the BSDs via __POSIX_VISIBLE >= 200112,
+dnl which 500 (1997) does not.  600 is also the ceiling for the UNIX 03 legacy
+dnl platforms (HP-UX 11i, AIX), so prefer it over 700 (POSIX.1-2008).
+AC_DEFINE([_XOPEN_SOURCE], [600], [expose POSIX declarations (e.g. lstat) in -ansi mode])
 
 AC_CANONICAL_HOST
 AC_PROG_CC
