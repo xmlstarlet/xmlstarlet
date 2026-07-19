@@ -26,8 +26,17 @@ AS_IF([test -r doc/xmlstarlet.1], [LACK_DOCS=no], [LACK_DOCS=yes])
 
 AC_ARG_ENABLE([build_docs],
         [AS_HELP_STRING([--enable-build-docs],
-                [include rules to build documentation files])],
+                [(re)build the documentation from source])],
         [], [enable_build_docs=$LACK_DOCS])
+
+AC_ARG_ENABLE([install_docs],
+        [AS_HELP_STRING([--disable-install-docs],
+                [do not install documentation @<:@default: install if built or present@:>@])],
+        [], [enable_install_docs=auto])
+
+dnl --disable-install-docs means no docs at all, so it overrides
+dnl --enable-build-docs (no point building docs that will not be installed).
+AS_IF([test "x$enable_install_docs" = xno], [enable_build_docs=no])
 
 AC_ARG_ENABLE([werror],
         [AS_HELP_STRING([--enable-werror],
@@ -99,10 +108,13 @@ AS_IF([test x"$enable_build_docs" = xyes],
         AM_CONDITIONAL([HAVE_PDF2PS], [false])])
 
 AM_CONDITIONAL([BUILD_DOCS], [test x"$enable_build_docs" = xyes])
-dnl Install/dist the docs when they will be built or are already present
-dnl (a dist tarball ships them prebuilt with BUILD_DOCS off).
-AM_CONDITIONAL([INSTALL_DOCS],
-               [test x"$enable_build_docs" = xyes || test x"$LACK_DOCS" = xno])
+dnl Install the docs when explicitly requested, or by default when they will
+dnl be built or are already present (a dist tarball ships them prebuilt).
+AS_IF([test "x$enable_install_docs" = xno], [install_docs=no],
+      [test "x$enable_install_docs" = xyes], [install_docs=yes],
+      [test x"$enable_build_docs" = xyes || test x"$LACK_DOCS" = xno], [install_docs=yes],
+      [install_docs=no])
+AM_CONDITIONAL([INSTALL_DOCS], [test x"$install_docs" = xyes])
 
 
 AS_IF([test "x$STATIC_LIBS" = xno],
