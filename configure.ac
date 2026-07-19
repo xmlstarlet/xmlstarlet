@@ -62,35 +62,52 @@ AM_PROG_CC_C_O
 AC_ARG_PROGRAM          dnl Transforming Program Names When Installing
 AC_PROG_SED
 AC_PROG_AWK
+PKG_PROG_PKG_CONFIG
 
-XSTAR_LIB_CHECK([LIBXML], [xml2-config])
-
-AS_IF([test "x$LIBXML_SRCDIR" != x],
-      [LIBXML_INCDIR="$LIBXML_SRCDIR/include"])
-[: ${LIBXML_INCDIR="$LIBXML_PREFIX/include/libxml2"}]
-
-AS_IF([test "x$STATIC_LIBS" != xno],
-      [LIBXML_CPPFLAGS="-I$LIBXML_INCDIR -DLIBXML_STATIC"],
-      [LIBXML_CPPFLAGS="-I$LIBXML_INCDIR"])
-
-AS_IF([test "x$STATIC_LIBS" != xno],
-      [LIBXML_LIBS="$LIBXML_LIBDIR/libxml2.a"],
-      [LIBXML_LIBS="-lxml2"])
-[LIBXML_LDFLAGS="-L$LIBXML_LIBDIR"]
-
-
-XSTAR_LIB_CHECK([LIBXSLT], [xslt-config])
-
-AS_IF([test "x$LIBXSLT_SRCDIR" != x],
-      [XSLTPROC_PATH="$LIBXSLT_SRCDIR/xsltproc:$PATH"
-       LIBXSLT_INCDIR="$LIBXSLT_SRCDIR"
-       LIBXSLT_LDFLAGS="-L$LIBXSLT_SRCDIR/libexslt/.libs -L$LIBXSLT_SRCDIR/libxslt/.libs"
+# libxml2: prefer pkg-config, falling back to xml2-config for static linking,
+# uninstalled (--with-libxml-src), custom-prefix, explicit LIBXML_CONFIG, and
+# no-pkg-config builds.
+xstar_libxml_pc=no
+AS_IF([test "x$LIBXML_SRCDIR$LIBXML_CONFIG" = x && test "x$STATIC_LIBS" = xno && test -n "$PKG_CONFIG"],
+      [PKG_CHECK_MODULES([LIBXML], [libxml-2.0 >= $LIBXML_REQUIRED_VERSION],
+                         [xstar_libxml_pc=yes], [xstar_libxml_pc=no])])
+AS_IF([test "x$xstar_libxml_pc" = xyes],
+      [LIBXML_CPPFLAGS="$LIBXML_CFLAGS"],
+      [XSTAR_LIB_CHECK([LIBXML], [xml2-config])
+       AS_IF([test "x$LIBXML_SRCDIR" != x],
+             [LIBXML_INCDIR="$LIBXML_SRCDIR/include"])
+       : ${LIBXML_INCDIR="$LIBXML_PREFIX/include/libxml2"}
        AS_IF([test "x$STATIC_LIBS" != xno],
-             [LIBXSLT_LIBS="$LIBXSLT_SRCDIR/libexslt/.libs/libexslt.a $LIBXSLT_SRCDIR/libxslt/.libs/libxslt.a"])],
-      [XSLTPROC_PATH="$PATH"
-       LIBXSLT_LDFLAGS="-L$LIBXSLT_LIBDIR"
-      AS_IF([test "x$STATIC_LIBS" != xno],
-             [LIBXSLT_LIBS="$LIBXSLT_LIBDIR/libexslt.a $LIBXSLT_LIBDIR/libxslt.a"])])
+             [LIBXML_CPPFLAGS="-I$LIBXML_INCDIR -DLIBXML_STATIC"],
+             [LIBXML_CPPFLAGS="-I$LIBXML_INCDIR"])
+       AS_IF([test "x$STATIC_LIBS" != xno],
+             [LIBXML_LIBS="$LIBXML_LIBDIR/libxml2.a"],
+             [LIBXML_LIBS="-lxml2"])
+       LIBXML_LDFLAGS="-L$LIBXML_LIBDIR"])
+
+# libxslt / libexslt: same strategy as libxml2.
+xstar_libxslt_pc=no
+AS_IF([test "x$LIBXSLT_SRCDIR$LIBXSLT_CONFIG" = x && test "x$STATIC_LIBS" = xno && test -n "$PKG_CONFIG"],
+      [PKG_CHECK_MODULES([LIBXSLT], [libexslt libxslt >= $LIBXSLT_REQUIRED_VERSION],
+                         [xstar_libxslt_pc=yes], [xstar_libxslt_pc=no])])
+AS_IF([test "x$xstar_libxslt_pc" = xyes],
+      [LIBXSLT_CPPFLAGS="$LIBXSLT_CFLAGS"
+       XSLTPROC_PATH="$PATH"],
+      [XSTAR_LIB_CHECK([LIBXSLT], [xslt-config])
+       AS_IF([test "x$LIBXSLT_SRCDIR" != x],
+             [XSLTPROC_PATH="$LIBXSLT_SRCDIR/xsltproc:$PATH"
+              LIBXSLT_INCDIR="$LIBXSLT_SRCDIR"
+              LIBXSLT_LDFLAGS="-L$LIBXSLT_SRCDIR/libexslt/.libs -L$LIBXSLT_SRCDIR/libxslt/.libs"
+              AS_IF([test "x$STATIC_LIBS" != xno],
+                    [LIBXSLT_LIBS="$LIBXSLT_SRCDIR/libexslt/.libs/libexslt.a $LIBXSLT_SRCDIR/libxslt/.libs/libxslt.a"])],
+             [XSLTPROC_PATH="$PATH"
+              LIBXSLT_LDFLAGS="-L$LIBXSLT_LIBDIR"
+              AS_IF([test "x$STATIC_LIBS" != xno],
+                    [LIBXSLT_LIBS="$LIBXSLT_LIBDIR/libexslt.a $LIBXSLT_LIBDIR/libxslt.a"])])
+       AS_IF([test "x$STATIC_LIBS" = xno],
+             [LIBXSLT_LIBS="-lexslt -lxslt"])
+       : ${LIBXSLT_INCDIR="$LIBXSLT_PREFIX/include"}
+       LIBXSLT_CPPFLAGS="-I$LIBXSLT_INCDIR"])
 
 AS_IF([test x"$enable_build_docs" = xyes],
       [AC_PATH_PROG(XSLTPROC, xsltproc, [none], [$XSLTPROC_PATH])
@@ -115,13 +132,6 @@ AS_IF([test "x$enable_install_docs" = xno], [install_docs=no],
       [test x"$enable_build_docs" = xyes || test x"$LACK_DOCS" = xno], [install_docs=yes],
       [install_docs=no])
 AM_CONDITIONAL([INSTALL_DOCS], [test x"$install_docs" = xyes])
-
-
-AS_IF([test "x$STATIC_LIBS" = xno],
-      [LIBXSLT_LIBS="-lexslt -lxslt"])
-
-[: ${LIBXSLT_INCDIR="$LIBXSLT_PREFIX/include"}]
-[LIBXSLT_CPPFLAGS="-I$LIBXSLT_INCDIR"]
 
 
 [WIN32_EXTRA_LDFLAGS=]
