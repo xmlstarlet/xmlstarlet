@@ -29,6 +29,11 @@ AC_ARG_ENABLE([build_docs],
                 [include rules to build documentation files])],
         [], [enable_build_docs=$LACK_DOCS])
 
+AC_ARG_ENABLE([werror],
+        [AS_HELP_STRING([--enable-werror],
+                [treat compiler warnings as errors @<:@default=no@:>@])],
+        [WERROR=$enableval], [WERROR=no])
+
 dnl
 dnl Check the environment
 dnl
@@ -43,6 +48,7 @@ AC_CANONICAL_HOST
 AC_PROG_CC
 AM_CONDITIONAL([GCC], [test x$GCC = xyes])
 AS_IF([test x$GCC = xyes], [CFLAGS="-ansi $CFLAGS"])
+AS_IF([test "x$WERROR" = xyes && test x$GCC = xyes], [CFLAGS="$CFLAGS -Werror"])
 AM_PROG_CC_C_O
 AC_ARG_PROGRAM          dnl Transforming Program Names When Installing
 AC_PROG_SED
