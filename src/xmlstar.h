@@ -17,6 +17,9 @@
 #include <libxml/xpathInternals.h>
 #include <libxml/xmlreader.h>
 
+#define CHECK_MEM(ret) if (!ret) \
+        (fprintf(stderr, "out of memory\n"), exit(EXIT_INTERNAL_ERROR))
+
 typedef enum { /* EXIT_SUCCESS = 0, EXIT_FAILURE = 1, */
     EXIT_BAD_ARGS = EXIT_FAILURE+1, EXIT_BAD_FILE,
     EXIT_LIB_ERROR, EXIT_INTERNAL_ERROR } exit_status;

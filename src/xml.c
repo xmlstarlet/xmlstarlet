@@ -269,9 +269,6 @@ suppressErrors(void)
     errorInfo.verbose = QUIET;
 }
 
-#define CHECK_MEM(ret) if (!ret) \
-        (fprintf(stderr, "out of memory\n"), exit(EXIT_INTERNAL_ERROR))
-
 void*
 xmalloc(size_t size)
 {

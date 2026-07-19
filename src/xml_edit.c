@@ -242,7 +242,7 @@ update_string(xmlDocPtr doc, xmlNodePtr dest, const xmlChar* newstr)
  */
 static void
 edUpdate(xmlDocPtr doc, xmlNodeSetPtr nodes, const char *val,
-    XmlNodeType type, xmlXPathContextPtr ctxt)
+    XmlNodeType type, xmlXPathContextPtr ctxt, xmlNodePtr deletedNodes)
 {
     int i;
     xmlXPathCompExprPtr xpath = NULL;
@@ -290,7 +290,8 @@ edUpdate(xmlDocPtr doc, xmlNodeSetPtr nodes, const char *val,
                 /* NOTE: if any oldChildren were newChildren, they've been
                    copied so we can free them all now */
                 for (j = 0; j < oldChildren->nodeNr; j++) {
-                    xmlFreeNode(oldChildren->nodeTab[j]);
+                    xmlUnlinkNode(oldChildren->nodeTab[j]);
+                    xmlAddChild(deletedNodes, oldChildren->nodeTab[j]);
                     oldChildren->nodeTab[j] = NULL;
                 }
                 oldChildren->nodeNr = 0;
@@ -310,38 +311,6 @@ edUpdate(xmlDocPtr doc, xmlNodeSetPtr nodes, const char *val,
 
 /* holds the node that was last inserted */
 static xmlNodeSetPtr previous_insertion;
-
-/**
- * We must not keep free'd nodes in @previous_insertion.
- * This is a callback from xmlFreeNode()
- */
-static void
-removeNodeFromPrev(xmlNodePtr node)
-{
-    xmlXPathNodeSetDel(previous_insertion, node);
-}
-
-/**
- * Set the node-deregistration callback.
- *
- * libxml2 2.13 deprecated the global node-registration hooks and offers no
- * replacement, but we still need the deregister callback to drop freed nodes
- * from @previous_insertion (the $prev variable).  Isolate the deprecated call
- * here so building with -Werror=deprecated-declarations does not reject it.
- * TODO: revisit once libxml2 provides a non-global successor.
- */
-static void
-edSetDeregisterNode(xmlDeregisterNodeFunc func)
-{
-#ifdef __GNUC__
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-    xmlDeregisterNodeDefault(func);
-#ifdef __GNUC__
-# pragma GCC diagnostic pop
-#endif
-}
 
 /**
  *  'insert' operation
@@ -414,7 +383,7 @@ edRename(xmlDocPtr doc, xmlNodeSetPtr nodes, const char *val, XmlNodeType type)
  *  'delete' operation
  */
 static void
-edDelete(xmlDocPtr doc, xmlNodeSetPtr nodes)
+edDelete(xmlDocPtr doc, xmlNodeSetPtr nodes, xmlNodePtr deletedNodes)
 {
     int i;
     for (i = nodes->nodeNr - 1; i >= 0; i--)
@@ -431,8 +400,8 @@ edDelete(xmlDocPtr doc, xmlNodeSetPtr nodes)
         /* delete node */
         xmlUnlinkNode(nodes->nodeTab[i]);
 
-        /* Free node and children */
-        xmlFreeNode(nodes->nodeTab[i]);
+        /* Move to deletedNodes */
+        xmlAddChild(deletedNodes, nodes->nodeTab[i]);
         nodes->nodeTab[i] = NULL;
     }
 }
@@ -469,6 +438,7 @@ edProcess(xmlDocPtr doc, const XmlEdAction* ops, int ops_count)
 {
     int k;
     xmlXPathContextPtr ctxt = xmlXPathNewContext(doc);
+    xmlNodePtr deletedNodes;
     /* NOTE: later registrations override earlier ones */
     registerXstarNs(ctxt);
 
@@ -476,7 +446,6 @@ edProcess(xmlDocPtr doc, const XmlEdAction* ops, int ops_count)
     previous_insertion = xmlXPathNodeSetCreate(NULL);
     registerXstarVariable(ctxt, "prev",
         xmlXPathWrapNodeSet(previous_insertion));
-    edSetDeregisterNode(&removeNodeFromPrev);
 
 #if HAVE_EXSLT_XPATH_REGISTER
     /* register extension functions */
@@ -490,6 +459,9 @@ edProcess(xmlDocPtr doc, const XmlEdAction* ops, int ops_count)
         extract_ns_defs(doc, ctxt);
     /* namespaces from command line */
     nsarr_xpath_register(ctxt);
+
+    deletedNodes = xmlNewDocFragment(doc);
+    CHECK_MEM(deletedNodes);
 
     for (k = 0; k < ops_count; k++)
     {
@@ -513,7 +485,7 @@ edProcess(xmlDocPtr doc, const XmlEdAction* ops, int ops_count)
         switch (ops[k].op)
         {
             case XML_ED_DELETE:
-                edDelete(doc, nodes);
+                edDelete(doc, nodes, deletedNodes);
                 break;
             case XML_ED_MOVE: {
                 xmlXPathObjectPtr res_to;
@@ -530,7 +502,7 @@ edProcess(xmlDocPtr doc, const XmlEdAction* ops, int ops_count)
                 break;
             }
             case XML_ED_UPDATE:
-                edUpdate(doc, nodes, ops[k].arg2, ops[k].type, ctxt);
+                edUpdate(doc, nodes, ops[k].arg2, ops[k].type, ctxt, deletedNodes);
                 break;
             case XML_ED_RENAME:
                 edRename(doc, nodes, ops[k].arg2, ops[k].type);
@@ -549,9 +521,8 @@ edProcess(xmlDocPtr doc, const XmlEdAction* ops, int ops_count)
         }
         xmlXPathFreeObject(res);
     }
-    /* NOTE: free()ing ctxt also free()s previous_insertion */
-    previous_insertion = NULL;
-    edSetDeregisterNode(NULL);
+
+    xmlFreeNode(deletedNodes);
 
     xmlXPathFreeContext(ctxt);
 }
