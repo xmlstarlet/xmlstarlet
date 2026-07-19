@@ -547,7 +547,13 @@ selPrepareXslt(xmlDocPtr style, selOptionsPtr ops, xmlChar *ns_arr[],
 
             if (root_template) {
                 xmlChar num_buf[1+10+1];    /* t+maxnumber+NUL */
+                /* xmlStrPrintf's format argument became const char * in
+                 * libxml2 2.9.4; older versions expect const xmlChar *. */
+#if LIBXML_VERSION >= 20904
                 xmlStrPrintf(num_buf, sizeof num_buf, "t%d", t);
+#else
+                xmlStrPrintf(num_buf, sizeof num_buf, BAD_CAST "t%d", t);
+#endif
 
                 call_template = xmlNewChild(root_template, xslns,
                     BAD_CAST "call-template", NULL);
