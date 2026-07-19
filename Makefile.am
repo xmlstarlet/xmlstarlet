@@ -33,8 +33,8 @@ rpm: cleantar distdir xmlstarlet.spec
 
 $(distdir)-win32.zip: $(WIN32_DIST) $(WIN32_doc_DIST)
 	mkdir -p /tmp/$(distdir)/doc
-	cp $^ /tmp/$(distdir)
-	cd /tmp/$(distdir) && mv $(notdir $(WIN32_doc_DIST)) /tmp/$(distdir)/doc
+	cp $(WIN32_DIST) /tmp/$(distdir)
+	cp $(WIN32_doc_DIST) /tmp/$(distdir)/doc
 	strip /tmp/$(distdir)/xml.exe
 	cd /tmp && zip -9 --symlinks --recurse-paths --to-crlf --move \
 	  $(distdir)-win32.zip $(distdir)
