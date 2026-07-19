@@ -78,8 +78,10 @@ $(generated_usage_sources) : usage2c.awk
 # doc
 include doc/doc.mk
 
+if INSTALL_DOCS
 man_MANS = $(manpage)
 dist_doc_DATA = $(userguide_gen) doc/html.css $(txtguide)
+endif
 EXTRA_DIST += $(manpage_src) $(userguide_src) $(txtguide_src)
 EXTRA_DIST += $(buildfiles_docs) $(manpage)
 

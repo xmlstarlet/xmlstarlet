@@ -99,6 +99,10 @@ AS_IF([test x"$enable_build_docs" = xyes],
         AM_CONDITIONAL([HAVE_PDF2PS], [false])])
 
 AM_CONDITIONAL([BUILD_DOCS], [test x"$enable_build_docs" = xyes])
+dnl Install/dist the docs when they will be built or are already present
+dnl (a dist tarball ships them prebuilt with BUILD_DOCS off).
+AM_CONDITIONAL([INSTALL_DOCS],
+               [test x"$enable_build_docs" = xyes || test x"$LACK_DOCS" = xno])
 
 
 AS_IF([test "x$STATIC_LIBS" = xno],
