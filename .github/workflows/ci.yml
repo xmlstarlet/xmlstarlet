@@ -146,11 +146,11 @@ jobs:
             LIBXSLT_CONFIG="$PREFIX/bin/xslt-config" \
             LDFLAGS="-Wl,-rpath,$PREFIX/lib"
 
-      # man_MANS / dist_doc_DATA are listed unconditionally in Makefile.am but
-      # their rules are gated on BUILD_DOCS; empty them so `all` builds only
-      # the binary (docs generation needs docbook-xsl and is tested separately).
+      # These jobs configure with --disable-build-docs, so INSTALL_DOCS is off
+      # and `make` builds only the binary. Documentation is generated
+      # separately (it needs docbook-xsl).
       - name: Build
-        run: make -j"$(nproc)" man_MANS= dist_doc_DATA=
+        run: make -j"$(nproc)"
 
       - name: Test
         run: |
@@ -161,11 +161,11 @@ jobs:
             # own XFAIL_TESTS so the run is green; if one starts passing again it
             # surfaces as XPASS (which fails the job).
             base=$(make -pn 2>/dev/null | sed -n 's/^XFAIL_TESTS = //p' | head -1)
-            make check man_MANS= dist_doc_DATA= XFAIL_TESTS="$base \
+            make check XFAIL_TESTS="$base \
               examples/bigxml-xsd examples/hello1 examples/recover1 \
               examples/schema1 examples/valid1"
           else
-            make check man_MANS= dist_doc_DATA=
+            make check
           fi
 
       - name: Report test results
@@ -279,8 +279,8 @@ jobs:
             LIBXML_CONFIG="$PREFIX/bin/xml2-config" \
             LIBXSLT_CONFIG="$PREFIX/bin/xslt-config" \
             LDFLAGS="-Wl,-rpath,$PREFIX/lib"
-          make -j"$(nproc)" man_MANS= dist_doc_DATA=
-          make check man_MANS= dist_doc_DATA=
+          make -j"$(nproc)"
+          make check
 
       - name: Report test results
         if: always()
@@ -348,8 +348,8 @@ jobs:
           autoreconf -fi
           ./configure --disable-build-docs --enable-werror \
             LIBXML_CONFIG="$xml2cfg" LIBXSLT_CONFIG="$xsltcfg"
-          make -j"$(sysctl -n hw.ncpu 2>/dev/null || nproc)" man_MANS= dist_doc_DATA=
-          make check man_MANS= dist_doc_DATA=
+          make -j"$(sysctl -n hw.ncpu 2>/dev/null || nproc)"
+          make check
 
       - name: Report test results
         if: always()
@@ -449,8 +449,8 @@ jobs:
             LIBXML_CONFIG="$PREFIX/bin/xml2-config" \
             LIBXSLT_CONFIG="$PREFIX/bin/xslt-config" \
             LDFLAGS="-Wl,-rpath,$PREFIX/lib"
-          make -j"$(nproc)" man_MANS= dist_doc_DATA=
-          make check man_MANS= dist_doc_DATA=
+          make -j"$(nproc)"
+          make check
 
       - name: Report test results
         if: always()
@@ -511,7 +511,7 @@ jobs:
         run: |
           autoreconf -fi
           ./configure --disable-build-docs --enable-werror
-          make -j"$(nproc)" man_MANS= dist_doc_DATA=
+          make -j"$(nproc)"
 
       - name: Test
         # MSYS2 rewrites arguments that look like POSIX paths into Windows paths
@@ -520,7 +520,7 @@ jobs:
         # for the test run; the build above still needs it for gcc's paths.
         env:
           MSYS2_ARG_CONV_EXCL: "*"
-        run: make check man_MANS= dist_doc_DATA=
+        run: make check
 
       - name: Report test results
         if: always()
@@ -579,8 +579,8 @@ jobs:
             ./configure --disable-build-docs --enable-werror \
               LIBXML_CONFIG="$(command -v xml2-config)" \
               LIBXSLT_CONFIG="$(command -v xslt-config)"
-            gmake -j"$(sysctl -n hw.ncpu)" man_MANS= dist_doc_DATA=
-            gmake check man_MANS= dist_doc_DATA=
+            gmake -j"$(sysctl -n hw.ncpu)"
+            gmake check
 
   openbsd:
     name: openbsd
@@ -604,8 +604,8 @@ jobs:
             ./configure --disable-build-docs --enable-werror \
               LIBXML_CONFIG="$(command -v xml2-config)" \
               LIBXSLT_CONFIG="$(command -v xslt-config)"
-            gmake man_MANS= dist_doc_DATA=
-            gmake check man_MANS= dist_doc_DATA= \
+            gmake
+            gmake check \
               || { echo '=== test-suite.log ==='; cat test-suite.log; exit 1; }
 
   netbsd:
@@ -633,8 +633,8 @@ jobs:
               LIBXML_CONFIG="$(command -v xml2-config)" \
               LIBXSLT_CONFIG="$(command -v xslt-config)" \
               LDFLAGS="-Wl,-rpath,$(xml2-config --prefix)/lib"
-            gmake man_MANS= dist_doc_DATA=
-            gmake check man_MANS= dist_doc_DATA= \
+            gmake
+            gmake check \
               || { echo '=== test-suite.log ==='; cat test-suite.log; exit 1; }
 
   omnios:
@@ -661,8 +661,8 @@ jobs:
               LIBXML_CONFIG="$(command -v xml2-config)" \
               LIBXSLT_CONFIG="$(command -v xslt-config)" \
               LDFLAGS="-Wl,-rpath,$(xml2-config --prefix)/lib"
-            gmake man_MANS= dist_doc_DATA=
-            gmake check man_MANS= dist_doc_DATA= \
+            gmake
+            gmake check \
               || { echo '=== test-suite.log ==='; cat test-suite.log; exit 1; }
 
   # -------------------------------------------------------------------------
@@ -692,5 +692,5 @@ jobs:
           set -eux
           autoreconf -fi
           ./configure --disable-build-docs --enable-werror
-          make -j"$(nproc)" man_MANS= dist_doc_DATA=
-          make check man_MANS= dist_doc_DATA=
+          make -j"$(nproc)"
+          make check
