@@ -1,0 +1,22 @@
+#!/bin/sh
+# --ignore-default-namespace strips the default namespace so XPath can address
+# those elements by plain local name, without binding a prefix.  Assert with
+# node counts and text values, and drop blank lines, so the test does not depend
+# on serialization/whitespace details that differ across libxml2 versions.
+doc=xml/books-multiple-namespace.xml
+{
+  echo default-ns match
+  # The default-namespaced <title> is reachable by plain name only WITH the option.
+  ./xmlstarlet sel -t -v 'count(/books/book/title)' -n $doc
+  ./xmlstarlet --ignore-default-namespace sel -t -v /books/book/title -n $doc
+
+  echo prefixed element
+  # A prefix-qualified element is still addressed through its prefix.
+  ./xmlstarlet --ignore-default-namespace sel -t -v 'count(/books/ext:book)' -n $doc
+
+  echo delete
+  # ed -d removes the matched title; the count drops from 1 to 0.
+  ./xmlstarlet --ignore-default-namespace sel -t -v 'count(/books/book/title)' -n $doc
+  ./xmlstarlet --ignore-default-namespace ed -d /books/book/title $doc \
+      | ./xmlstarlet --ignore-default-namespace sel -t -v 'count(/books/book/title)' -n
+} | grep -v '^[[:space:]]*$'

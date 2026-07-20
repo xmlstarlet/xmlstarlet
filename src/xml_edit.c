@@ -488,6 +488,9 @@ edProcess(xmlDocPtr doc, const XmlEdAction* ops, int ops_count)
     /* namespaces from doc */
     if (globalOptions.doc_namespace)
         extract_ns_defs(doc, ctxt);
+    if (globalOptions.ignore_default_namespace)
+        remove_namespace_tree_walk(xmlDocGetRootElement(doc), NULL);
+
     /* namespaces from command line */
     nsarr_xpath_register(ctxt);
 

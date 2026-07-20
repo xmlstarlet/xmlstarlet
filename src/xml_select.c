@@ -628,6 +628,30 @@ selPrepareXslt(xmlDocPtr style, selOptionsPtr ops, xmlChar *ns_arr[],
 }
 
 /**
+ * tree-recursively remove namespace @ns from the root @node.
+ * if @ns is null, remove the default namespace, which is lookup
+ * at root @node.
+ */
+void
+remove_namespace_tree_walk(xmlNodePtr node, xmlNsPtr ns)
+{
+    /* find default ns if not specified */
+    if (ns == NULL) {
+        for (ns = node->nsDef; ns != NULL; ns = ns->next) {
+            if (ns->prefix == NULL) break;
+        }
+        if (ns == NULL) return; /* not found */
+    }
+
+    if (node->type == XML_ELEMENT_NODE && node->ns == ns) {
+        node->ns = NULL;
+        if (node->children) remove_namespace_tree_walk(node->children, ns);
+    }
+    if (node->next)
+        remove_namespace_tree_walk(node->next, ns);
+}
+
+/**
  * copy namespace definitions from @root to @style_tree
  */
 static void
@@ -672,6 +696,9 @@ do_file(const char *filename, xmlDocPtr style_tree,
         if (!style) {
             if (globalOptions.doc_namespace)
                 extract_ns_defs(xmlDocGetRootElement(doc), style_tree);
+            if (globalOptions.ignore_default_namespace)
+                remove_namespace_tree_walk(xmlDocGetRootElement(doc), NULL);
+
             /* Parse XSLT stylesheet */
             style = xsltParseStylesheetDoc(style_tree);
             if (!style) exit(EXIT_LIB_ERROR);

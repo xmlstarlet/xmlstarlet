@@ -60,6 +60,7 @@ examples/findfile1\
 examples/fo-html-stdin\
 examples/genxml1\
 examples/hello1\
+examples/ignore-default-namespace\
 examples/localname1\
 examples/look1\
 examples/move1\
