@@ -302,7 +302,9 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # OS axis: build against each platform's own libxml2/libxslt (Linux from the
-  # distro, macOS from Homebrew - currently 2.15). All required.
+  # distro via pkg-config, macOS from Homebrew - currently 2.15). All required.
+  # This is where the pkg-config detection path is exercised; the from-source
+  # matrix above passes LIBXML_CONFIG and so covers the *-config fallback.
   # ---------------------------------------------------------------------------
   os:
     name: ${{ matrix.os }}
@@ -337,16 +339,19 @@ jobs:
       - name: Build + test
         run: |
           set -eux
-          if [ "$RUNNER_OS" = macOS ]; then
-            xml2cfg="$(brew --prefix libxml2)/bin/xml2-config"
-            xsltcfg="$(brew --prefix libxslt)/bin/xslt-config"
-          else
-            xml2cfg=/usr/bin/xml2-config
-            xsltcfg=/usr/bin/xslt-config
-          fi
           autoreconf -fi
-          ./configure --disable-build-docs --enable-werror \
-            LIBXML_CONFIG="$xml2cfg" LIBXSLT_CONFIG="$xsltcfg"
+          if [ "$RUNNER_OS" = macOS ]; then
+            # Homebrew libxml2/libxslt are keg-only and off the default
+            # pkg-config search path, so point configure at their *-config
+            # scripts (the fallback path).
+            ./configure --disable-build-docs --enable-werror \
+              LIBXML_CONFIG="$(brew --prefix libxml2)/bin/xml2-config" \
+              LIBXSLT_CONFIG="$(brew --prefix libxslt)/bin/xslt-config"
+          else
+            # Linux: a plain configure resolves the distro libs through
+            # pkg-config, exercising the primary detection path (issue 13).
+            ./configure --disable-build-docs --enable-werror
+          fi
           make -j"$(sysctl -n hw.ncpu 2>/dev/null || nproc)"
           make check
 
