@@ -26,9 +26,8 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Git ref to test (branch/tag/sha), e.g. 1.6.1 or master"
+        description: "Git ref to test (branch/tag/sha); blank = the branch this run is launched from"
         required: false
-        default: master
 
 permissions:
   contents: read
