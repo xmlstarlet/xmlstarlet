@@ -238,19 +238,70 @@ update_string(xmlDocPtr doc, xmlNodePtr dest, const xmlChar* newstr)
 }
 
 /**
+ *  Is @node destroyed by replacing @top's children?
+ *
+ *  xmlNodeSetContent() frees the children it replaces, so everything hanging
+ *  below them goes too. Attributes and namespace declarations of @top itself do
+ *  not: they hang off ->properties and ->nsDef, not ->children.
+ */
+static int
+dies_with_children_of(xmlNodePtr node, xmlNodePtr top)
+{
+    xmlNodePtr cur;
+
+    /* a namespace node is an xmlNs, which has no ->parent to follow */
+    if (node == NULL || top == NULL || node == top
+        || node->type == XML_NAMESPACE_DECL)
+        return 0;
+
+    for (cur = node; cur != NULL && cur->parent != top; cur = cur->parent)
+        ;
+
+    return cur != NULL && cur->type != XML_ATTRIBUTE_NODE;
+}
+
+/**
  *  'update' operation
  */
 static void
 edUpdate(xmlDocPtr doc, xmlNodeSetPtr nodes, const char *val,
     XmlNodeType type, xmlXPathContextPtr ctxt, xmlNodePtr deletedNodes)
 {
-    int i;
+    int i, keep;
+    xmlNodePtr top = NULL;
     xmlXPathCompExprPtr xpath = NULL;
 
     if (type == XML_EXPR) {
         xpath = xmlXPathCompile((const xmlChar*) val);
         if (!xpath) return;
     }
+
+    /*
+     *  A node set is in document order, so an ancestor is updated before its
+     *  descendants -- and updating it replaces its children, freeing them.
+     *  Later entries living under those children would be followed into freed
+     *  memory, so drop them now. Nothing is lost: the node such an update would
+     *  write to is no longer in the document, so it was never observable.
+     *
+     *  This has to run before anything is modified, while every pointer is
+     *  still good. Once the children are freed a descendant cannot even be
+     *  examined to discover that it is dead. Pruning in place is safe because
+     *  edProcess frees this node set as soon as the operation returns.
+     */
+    for (i = 0, keep = 0; i < nodes->nodeNr; i++)
+    {
+        xmlNodePtr node = nodes->nodeTab[i];
+
+        if (dies_with_children_of(node, top))
+            continue;
+        /* Only an element's children are replaced. xmlNodeSetContent() leaves a
+         * document node's ->children alone, so "ed -u /" destroys nothing and
+         * must not shadow the entries that follow it. */
+        if (node->type == XML_ELEMENT_NODE)
+            top = node;
+        nodes->nodeTab[keep++] = node;
+    }
+    nodes->nodeNr = keep;
 
     for (i = 0; i < nodes->nodeNr; i++)
     {

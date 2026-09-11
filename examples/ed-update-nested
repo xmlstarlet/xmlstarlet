@@ -1,0 +1,23 @@
+#!/bin/sh
+# Updating a node set holding both an ancestor and its descendants. Replacing the
+# ancestor's content frees those descendants, which are still to come in the same
+# walk, so they have to be dropped from it. Built with -fsanitize=address this
+# fails if the walk goes on to update them.
+./xmlstarlet ed -u '//*' -v X << EOT
+<r><a>x</a><b>y</b></r>
+EOT
+echo $?
+# Same with text nodes in the set as well: they sit below the children being
+# replaced, so they go the same way.
+./xmlstarlet ed -u '//*|//text()' -v X << EOT
+<r><a>x</a><b>y</b></r>
+EOT
+echo $?
+# An attribute of the node being updated survives it -- attributes hang off
+# ->properties, not ->children -- so k must still be updated to X, while the
+# element's children are dropped from the walk. An attribute of one of those
+# children would go with it.
+./xmlstarlet ed -u '//*|//@*' -v X << EOT
+<r k="v"><a>x</a></r>
+EOT
+echo $?

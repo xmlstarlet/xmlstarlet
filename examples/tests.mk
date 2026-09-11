@@ -49,6 +49,7 @@ examples/ed-move\
 examples/ed-namespace\
 examples/ed-nop\
 examples/ed-subnode\
+examples/ed-update-nested\
 examples/elem1\
 examples/elem2\
 examples/elem3\
