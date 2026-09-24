@@ -17,6 +17,7 @@ where <command> is one of:
   -q or --quiet        - no error output
   --doc-namespace      - extract namespace bindings from input doc (default)
   --no-doc-namespace   - don't extract namespace bindings from input doc
+  --ignore-default-namespace - treat node with default namespace as no namespace node
   --version            - show version
   --help               - show help
 Wherever file name mentioned in command help it is assumed
